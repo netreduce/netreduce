@@ -8,12 +8,13 @@ Frontend), where it can be used as an alternative to creating a custom adapter s
 
 ### Features
 
-** WIP: netreduce is a work-in-progress project, the below features are meant as currently planned and can be in
+**WIP: netreduce is a work-in-progress project, the below features are meant as currently planned and can be in
 different state of availability, can be changed, and finally also can be dropped, until the first beta version
-of netreduce is released. **
+of netreduce is released.**
 
-- many-to-many releation between backend services and frontend endpoints
+- many-to-many relation between backend services and frontend endpoints
+- free composability of the frontend resource structures and their fields 
 - automatic parallelization/optimization of backend requests
-- safe definition of frontend endpoints without downtime
-- safe extensibility with custom backend connectors
-- safe extensibility with custom mapping functions for the frontend endpoints
+- runtime definition of frontend endpoints without downtime
+- extensibility with custom backend connectors
+- custom mapping functions for the frontend resources
