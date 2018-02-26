@@ -12,9 +12,9 @@ import (
 	// TODO: copy required parts and review
 	"github.com/stoewer/go-strcase"
 
-	"github.com/aryszka/netreduce/define"
-	"github.com/aryszka/netreduce/data"
-	"github.com/aryszka/netreduce/logging"
+	"github.com/netreduce/netreduce/define"
+	"github.com/netreduce/netreduce/data"
+	"github.com/netreduce/netreduce/logging"
 )
 
 type ConnectorClient struct {

@@ -9,9 +9,9 @@ import (
 	"reflect"
 
 	"github.com/sanity-io/litter"
-	"github.com/aryszka/netreduce"
-	"github.com/aryszka/netreduce/data"
-	. "github.com/aryszka/netreduce/define"
+	"github.com/netreduce/netreduce"
+	"github.com/netreduce/netreduce/data"
+	. "github.com/netreduce/netreduce/define"
 )
 
 // user code

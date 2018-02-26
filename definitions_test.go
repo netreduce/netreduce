@@ -6,8 +6,8 @@ import (
 	"testing"
 	"encoding/json"
 
-	. "github.com/aryszka/netreduce/define"
-	"github.com/aryszka/netreduce/data"
+	. "github.com/netreduce/netreduce/define"
+	"github.com/netreduce/netreduce/data"
 )
 
 func apiGetFixed(w http.ResponseWriter, _ *http.Request) {

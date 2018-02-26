@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"encoding/json"
 
-	"github.com/aryszka/netreduce/data"
+	"github.com/netreduce/netreduce/data"
 )
 
 // TODO: this needs loop protection if used for real
