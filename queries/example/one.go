@@ -1,5 +1,6 @@
 package example
 
+/*
 import "github.bus.zalan.do/pathfinder/shop/registry"
 
 const response = `
@@ -62,3 +63,4 @@ Define(
 
 	QueryOne(CollectionConnector.getCollectionByID),
 )
+*/

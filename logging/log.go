@@ -2,7 +2,7 @@ package logging
 
 import "log"
 
-type Log struct {}
+type Log struct{}
 
 func (l *Log) Println(a ...interface{}) {
 	log.Println(a...)

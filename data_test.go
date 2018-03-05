@@ -1,10 +1,10 @@
 package netreduce
 
 import (
-	"fmt"
-	"net/http"
-	"io/ioutil"
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
 
 	"github.com/netreduce/netreduce/data"
 )

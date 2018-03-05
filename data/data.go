@@ -17,7 +17,7 @@ func Int(data interface{}, name string) int {
 
 func GetInt(data interface{}, name string) (int, error) {
 	var (
-		v interface{}
+		v  interface{}
 		ok bool
 	)
 

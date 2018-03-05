@@ -10,9 +10,9 @@ const (
 )
 
 type Field struct {
-	typ FieldType
-	name string
-	value interface{}
+	typ         FieldType
+	name        string
+	value       interface{}
 	definitions []Definition
 }
 
@@ -26,8 +26,10 @@ type MapSpec struct {
 
 type Definition struct {
 	fields []Field
-	query *QuerySpec
+	query  QuerySpec
 }
+
+var ZeroQuery QuerySpec
 
 func Define(entries ...interface{}) Definition {
 	var d Definition
@@ -36,7 +38,7 @@ func Define(entries ...interface{}) Definition {
 		case Field:
 			d.fields = append(d.fields, et)
 		case QuerySpec:
-			d.query = &et
+			d.query = et
 		}
 	}
 
@@ -55,7 +57,7 @@ func (d Definition) Fields() []Field {
 	return d.fields
 }
 
-func (d Definition) Query() *QuerySpec {
+func (d Definition) Query() QuerySpec {
 	return d.query
 }
 

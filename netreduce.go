@@ -1,24 +1,23 @@
 package netreduce
 
 import (
-	"net/http"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
+	"net/http"
 	"reflect"
 	"strings"
-	"fmt"
 
 	// TODO: copy required parts and review
 	"github.com/stoewer/go-strcase"
 
 	"github.com/netreduce/netreduce/define"
-	"github.com/netreduce/netreduce/data"
 	"github.com/netreduce/netreduce/logging"
 )
 
 type ConnectorClient struct {
-	client *http.Client
+	client  *http.Client
 	baseURL string
 
 	Log Logger
@@ -32,15 +31,17 @@ type Connector interface {
 	Call(ConnectorContext, interface{}) (interface{}, error)
 }
 
+type RequestContext struct{}
+
 type Config struct {
 	keys map[string]string
 }
 
 type Registry struct {
 	connectorSpecs []interface{}
-	connectors map[reflect.Value]reflect.Value
-	clients map[Connector]ConnectorClient
-	endpoints map[string]define.Definition
+	connectors     map[reflect.Value]reflect.Value
+	clients        map[Connector]ConnectorClient
+	endpoints      map[string]define.Definition
 }
 
 type Logger interface {
@@ -52,21 +53,22 @@ type Server struct {
 	*Registry
 	Log Logger
 
-	mux http.ServeMux
+	mux         http.ServeMux
 	initialized bool
 }
 
 type singleChildResult struct {
-	name string
+	name     string
 	response interface{}
-	err error
+	err      error
 }
 
 var (
-	ErrNotFound = errors.New("not found")
-	ErrGateway = errors.New("bad gateway")
-	ErrInvalidBackendRequest = errors.New("invalid backend request")
+	ErrNotFound                  = errors.New("not found")
+	ErrGateway                   = errors.New("bad gateway")
+	ErrInvalidBackendRequest     = errors.New("invalid backend request")
 	ErrUnexpectedBackendResponse = errors.New("unexpected backend response")
+	errNotImplemented            = errors.New("not implemented")
 )
 
 // TODO: what's the right name for path+query?
@@ -128,125 +130,11 @@ func (r *Registry) SetRoute(path string, d define.Definition) {
 	r.endpoints[path] = d
 }
 
-func (s *Server) handleDef(d define.Definition, arg interface{}) (interface{}, error) {
-	response := make(data.Struct)
-
-	var (
-		backendFields []define.Field
-		singleChildFields []define.Field
-	)
-
-	for _, f := range d.Fields() {
-		switch f.Type() {
-		case define.ConstantField:
-			response[f.Name()] = f.Value()
-		case define.OneChildField:
-			singleChildFields = append(singleChildFields, f)
-		default:
-			backendFields = append(backendFields, f)
-		}
-	}
-
-	var singleChildResults chan singleChildResult
-	if len(singleChildFields) > 0 {
-		singleChildResults = make(chan singleChildResult)
-		for _, f := range singleChildFields {
-			if len(f.Definitions()) != 1 {
-				// TODO: exhaust child results
-				return nil, fmt.Errorf("missing child definition: %s", f.Name())
-			}
-
-			go func(name string, d define.Definition, arg interface{}, result chan<- singleChildResult) {
-				response, err := s.handleDef(d, arg)
-				result <- singleChildResult{name: name, response: response, err: err}
-			}(f.Name(), f.Definitions()[0], arg, singleChildResults)
-		}
-	}
-
-	query := d.Query()
-	if query != nil {
-		connector, ok := query.Connector().(Connector)
-		if !ok {
-			// TODO: exhaust child results
-			return nil, fmt.Errorf("invalid query: no valid connector defined")
-		}
-
-		client, ok := s.Registry.clients[connector]
-		if !ok {
-			// TODO: exhaust child results
-			return nil, fmt.Errorf("invalid query: unregistered connector")
-		}
-
-		ctx := ConnectorContext{Client: client}
-		backendResponse, err := connector.Call(ctx, arg)
-
-		if err != nil {
-			// TODO: exhaust child results
-			return nil, err
-		}
-
-		if id, err := data.GetString(backendResponse, "id"); err == nil {
-			response["id"] = id
-		}
-
-		for _, f := range backendFields {
-			var (
-				v interface{}
-				err error
-			)
-
-			switch f.Type() {
-			case define.IntField:
-				v, err = data.GetInt(backendResponse, f.Name())
-			case define.StringField:
-				v, err = data.GetString(backendResponse, f.Name())
-			default:
-				// TODO: exhaust child results
-				return nil, fmt.Errorf("not implemented field type")
-			}
-
-			if err != nil {
-				// TODO: exhaust child results
-				return nil, err
-			}
-
-			response[f.Name()] = v
-		}
-	}
-
-	var (
-		counter int
-		err error
-	)
-
-	for counter < len(singleChildFields) {
-		r := <-singleChildResults
-		if err != nil {
-			if r.err != nil {
-				// TODO: better handling of multiple errors
-				s.Log.Error(err)
-			}
-
-			counter++
-			continue
-		}
-
-		if r.err != nil {
-			err = r.err
-			counter++
-			continue
-		}
-
-		response[r.name] = r.response
-		counter++
-	}
-
-	return response, nil
-}
-
 func (s *Server) handleRoute(path string, d define.Definition) error {
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		response, err := s.handleDef(d, r.URL.Path)
+		p := newPlan(d, s.Registry)
+		response, err := p.execute(r.URL.Path)
+
 		if err != nil {
 			switch err {
 			case ErrNotFound:
@@ -275,7 +163,7 @@ func (s *Server) handleRoute(path string, d define.Definition) error {
 
 	prefix := path
 	if strings.HasSuffix(prefix, "/") {
-		prefix = prefix[:len(prefix) - 1]
+		prefix = prefix[:len(prefix)-1]
 	}
 
 	(&s.mux).Handle(path, http.StripPrefix(prefix, http.HandlerFunc(handler)))
@@ -317,9 +205,9 @@ func (s *Server) Init() error {
 		}
 
 		cc := ConnectorClient{
-			client: &http.Client{},
+			client:  &http.Client{},
 			baseURL: baseURL,
-			Log: s.Log,
+			Log:     s.Log,
 		}
 
 		if ct, ok := c.(Connector); ok {

@@ -1,20 +1,20 @@
 package netreduce
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"encoding/json"
 
-	. "github.com/netreduce/netreduce/define"
 	"github.com/netreduce/netreduce/data"
+	. "github.com/netreduce/netreduce/define"
 )
 
 func apiGetFixed(w http.ResponseWriter, _ *http.Request) {
 	fixedPerson := data.Struct{
-		"id": "fixed-person",
+		"id":   "fixed-person",
 		"name": "John Doe",
-		"age": 27,
+		"age":  27,
 	}
 
 	b, err := json.Marshal(fixedPerson)
@@ -33,9 +33,9 @@ func apiGetPerson(w http.ResponseWriter, r *http.Request) {
 	}
 
 	person := data.Struct{
-		"id": "foo",
+		"id":   "foo",
 		"name": "John Doe",
-		"age": 27,
+		"age":  27,
 	}
 
 	b, err := json.Marshal(person)
@@ -54,7 +54,7 @@ func apiGetPersonsPet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dog := data.Struct{
-		"id": "foo-dog",
+		"id":   "foo-dog",
 		"kind": "dog",
 		"name": "Winston",
 	}
@@ -88,9 +88,9 @@ func init() {
 }
 
 type (
-	GetFixedPerson struct {}
-	GetPerson struct {}
-	GetPersonsPet struct {}
+	GetFixedPerson struct{}
+	GetPerson      struct{}
+	GetPersonsPet  struct{}
 
 	testConnector struct {
 		GetFixedPerson
@@ -152,7 +152,7 @@ func testWithTestConnector(t *testing.T, route string, d Definition, requestPath
 	registry.SetRoute(route, d)
 
 	server := httptest.NewServer(&Server{
-		Config: config,
+		Config:   config,
 		Registry: registry,
 	})
 	defer server.Close()
@@ -177,9 +177,9 @@ func TestFixed(t *testing.T) {
 	)
 
 	expected := data.Struct{
-		"id": "fixed-person",
+		"id":   "fixed-person",
 		"name": "John Doe",
-		"age": 27,
+		"age":  27,
 	}
 
 	testWithTestConnector(t, "/fixed-person", def, "/fixed-person", expected)
@@ -193,9 +193,9 @@ func TestSelectByPath(t *testing.T) {
 	)
 
 	expected := data.Struct{
-		"id": "foo",
+		"id":   "foo",
 		"name": "John Doe",
-		"age": 27,
+		"age":  27,
 	}
 
 	testWithTestConnector(t, "/person/", def, "/person/foo", expected)
@@ -214,11 +214,11 @@ func TestContainsOne(t *testing.T) {
 	)
 
 	expected := data.Struct{
-		"id": "foo",
+		"id":   "foo",
 		"name": "John Doe",
-		"age": 27,
+		"age":  27,
 		"pet": data.Struct{
-			"id": "foo-dog",
+			"id":   "foo-dog",
 			"kind": "dog",
 			"name": "Winston",
 		},
