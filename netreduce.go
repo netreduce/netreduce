@@ -28,10 +28,13 @@ type ConnectorContext struct {
 }
 
 type Connector interface {
-	Call(ConnectorContext, interface{}) (interface{}, error)
+	Call(ConnectorContext, RequestContext) (interface{}, error)
 }
 
-type RequestContext struct{}
+type RequestContext struct {
+	path   string
+	cancel chan chan struct{}
+}
 
 type Config struct {
 	keys map[string]string
@@ -70,6 +73,39 @@ var (
 	ErrUnexpectedBackendResponse = errors.New("unexpected backend response")
 	errNotImplemented            = errors.New("not implemented")
 )
+
+func newRequestContext(r *http.Request) RequestContext {
+	cancel := make(chan chan struct{}, 1)
+	cancel <- make(chan struct{})
+	c := <-cancel
+	cancel <- c
+	return RequestContext{
+		path:   r.URL.Path,
+		cancel: cancel,
+	}
+}
+
+func (ctx RequestContext) Path() string {
+	return ctx.path
+}
+
+func (ctx RequestContext) Cancel() {
+	c := <-ctx.cancel
+
+	select {
+	case <-c:
+	default:
+		close(c)
+	}
+
+	ctx.cancel <- c
+}
+
+func (ctx RequestContext) Canceled() <-chan struct{} {
+	c := <-ctx.cancel
+	ctx.cancel <- c
+	return c
+}
 
 // TODO: what's the right name for path+query?
 func (c ConnectorClient) GetJSON(path string) (interface{}, error) {
@@ -133,7 +169,7 @@ func (r *Registry) SetRoute(path string, d define.Definition) {
 func (s *Server) handleRoute(path string, d define.Definition) error {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		p := newPlan(d, s.Registry)
-		response, err := p.execute(r.URL.Path)
+		response, err := p.execute(newRequestContext(r))
 
 		if err != nil {
 			switch err {
@@ -171,6 +207,8 @@ func (s *Server) handleRoute(path string, d define.Definition) error {
 }
 
 func (s *Server) Init() error {
+	s.initialized = true
+
 	if s.Log == nil {
 		s.Log = &logging.Log{}
 	}

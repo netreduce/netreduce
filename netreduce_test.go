@@ -149,7 +149,9 @@ func Test(t *testing.T) {
 	productServer := httptest.NewServer(http.HandlerFunc(productAPI))
 	stockServer := httptest.NewServer(http.HandlerFunc(stockAPI))
 	defer func() {
-		type closer interface{ Close() }
+		type closer interface {
+			Close()
+		}
 		for _, c := range []closer{collectionServer, productServer, stockServer} {
 			c.Close()
 		}
