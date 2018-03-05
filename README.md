@@ -3,8 +3,11 @@
 Netreduce is an API aggregator for HTTP services. Its primary goal is to provide an adapter layer between
 multiple different backend services and their clients. Netreduce provides an interface that can be optimized for
 the requirements of the clients, while allowing a clean and normalized interface on the backend services that
-are the owners of the actual resources. One typical use case of netreduce is the BFF scenario (Backend For the
-Frontend), where it can be used as an alternative to creating a custom adapter service from scratch.
+are the owners of the actual resources.
+
+The most abstract, general use case of netreduce is the transformation of service topology. It makes it possible
+to keep fulfilling the requirements of the service clients, while allowing the restructuring of the original
+sources. Some practical, more concrete examples is the BFF, Backend For Frontend.
 
 ### Features
 

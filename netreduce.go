@@ -167,9 +167,14 @@ func (r *Registry) SetRoute(path string, d define.Definition) {
 }
 
 func (s *Server) handleRoute(path string, d define.Definition) error {
+	p, err := newProto(d, s.Registry)
+	if err != nil {
+		return err
+	}
+
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		p := newPlan(d, s.Registry)
-		response, err := p.execute(newRequestContext(r))
+		pi := p.instance()
+		response, err := pi.execute(newRequestContext(r))
 
 		if err != nil {
 			switch err {
