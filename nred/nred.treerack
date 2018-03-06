@@ -1,3 +1,4 @@
+// definition of the nred syntax, the endpoint configuration language of Netreduce (https://www.netreduce.org)
 nred:root = definitions;
 
 space:ws    = [ \b\f\r\t\v];
