@@ -53,8 +53,8 @@ export "enriched-constants" extend(
 )
 
 // various mappings are possible, plus custom ones:
-let mapping1 map(renameField("foo", "bar"));
-let mapping2 map(renameField("bar", "baz"));
+let mapping1 renameField("foo", "bar");
+let mapping2 renameField("bar", "baz");
 
 // the backend returns {"foo": "blah"}
 // the query maps it to {"bar": "blah"}
