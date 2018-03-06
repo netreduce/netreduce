@@ -17,9 +17,10 @@ The HTTP push interface
 The HTTP input, configured, opens a listener with the provided address to accept incoming definitions from POST
 and PUT requests. It returns them for GET requests, or deletes them for DELETE requests. It supports HEAD and
 OPTIONS requests. It is possible to segment the definitions with incoming paths. If a set of definitions was
-sent previously to a specific path, then GET, HEAD and DELETE will consider the definitions sent to that path.
-The server expects the definitions in the request body in application/nred format (default), or in
-application/json format (not implemented).
+sent previously to a specific path, then GET, HEAD and DELETE will consider the definitions sent only to that
+path. In these cases, it is not possible to get back all the definitions with a single request. The server
+expects the definitions in the request body in application/nred format (default), or in application/json format
+(not implemented).
 
 Note that currently the push interface updates the definitions only in a single instance, so in a distributed
 setup, every current instance would need to be udpated, but it is recommended to rather rely on the pull client
