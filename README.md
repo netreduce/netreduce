@@ -78,7 +78,7 @@ export "/authenticated-user" define(
 
 	string("name")
 	int("level")
-	float("iris-radius-when-seen-this :)")
+	float("iris-radius-when-seen-this")
 
 	containsMany("roles", by("id"), define(
 		query("https://auth.example.org/roles")
