@@ -1,19 +1,20 @@
 # Netreduce
 
 Netreduce is an API aggregator for HTTP services. Its primary goal is to provide an adapter layer between
-multiple different backend services and their clients. Netreduce provides an interface that can be optimized for
-the requirements of the clients, while allowing a clean and normalized interface on the backend services that
-are the owners of the actual resources.
+multiple different backend services and their clients. Netreduce provides an interface that can be optimized
+for the requirements of the clients, while allowing a clean and normalized interface on the backend services
+that are the owners of the actual resources.
 
-The most abstract, general use case of netreduce is the transformation of service topology. It makes it possible
-to keep fulfilling the requirements of the service clients, while allowing the restructuring of the original
-sources, or the other way around. Some practical, more concrete example is the BFF, Backend For Frontend.
+The most abstract, general use case of netreduce is the transformation of service topology. It makes it
+possible to keep fulfilling the requirements of the service clients, while allowing the restructuring of the
+original sources, or the other way around. Some practical, more concrete example is the BFF, Backend For
+Frontend.
 
 ### Features
 
-**WIP: netreduce is a work-in-progress project, the below features are meant as currently planned and can be in
-different state of availability, can be changed, and finally also can be dropped, until the first beta version
-of netreduce is released.**
+**WIP: netreduce is a work-in-progress project, the below features are meant as currently planned and can be
+in different state of availability, can be changed, and finally also can be dropped, until the first beta
+version of netreduce is released.**
 
 - many-to-many relation between backend services and frontend endpoints
 - free composability of the frontend resource structures and their fields 
@@ -21,6 +22,7 @@ of netreduce is released.**
 - runtime definition of frontend endpoints without downtime
 - extensibility with custom backend connectors
 - custom mapping functions for the frontend resources
+- metrics and tracing
 
 ### Mapping Examples:
 
@@ -67,16 +69,15 @@ export "/foo-bar-baz" define(
 )
 
 // all kinds of relations are possible. It must be a tree, but the backend queries are parallelized and
-// deduplicated.
-// backend URLs: custom connectors are allowed, but by default, string urls are just automatically wrapped with a
-// default http connector.
+// deduplicated. backend URLs: custom connectors are allowed, but by default, string urls are just
+// automatically wrapped with a default http connector.
 export "/authenticated-user" define(
 	query("https://auth.example.org/info")
 	query(authConnector.extended)
 
 	string("name")
 	int("level")
-	float("iris-radius-when-seen-this :)")
+	float("iris-radius-when-seen-this")
 
 	containsMany("roles", by("id"), define(
 		query("https://auth.example.org/roles")

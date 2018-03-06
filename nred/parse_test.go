@@ -1,8 +1,8 @@
 package nred
 
 import (
-	"testing"
 	"bytes"
+	"testing"
 )
 
 func TestParse(t *testing.T) {
