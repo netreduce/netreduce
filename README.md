@@ -70,8 +70,8 @@ export "/foo-bar-baz" define(
 
 // all kinds of relations are possible. It must be a tree, but the backend queries are parallelized and
 // deduplicated.
-// backend URLs: custom connectors are allowed, but by default, string urls are just automatically wrapped with a
-// default http connector.
+// backend URLs: custom connectors are allowed, but by default, string urls are just automatically wrapped
+// with a default http connector.
 export "/authenticated-user" define(
 	query("https://auth.example.org/info")
 	query(authConnector.extended)
