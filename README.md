@@ -24,7 +24,7 @@ version of netreduce is released.**
 - custom mapping functions for the frontend resources
 - metrics and tracing
 
-### Mapping Examples:
+### Examples:
 
 ```
 // hello:
