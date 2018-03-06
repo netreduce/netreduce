@@ -1,5 +1,5 @@
 package loggingtest
 
-type NopLog struct {}
+type NopLog struct{}
 
 func (l NopLog) Error(...interface{}) {}

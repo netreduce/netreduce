@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/netreduce/netreduce/data"
-	"github.com/netreduce/netreduce/logging/loggingtest"
 	. "github.com/netreduce/netreduce/define"
+	"github.com/netreduce/netreduce/logging/loggingtest"
 )
 
 type concurrentAPI struct {
@@ -235,7 +235,7 @@ func TestConcurrentConnectorCanceled(t *testing.T) {
 	server := httptest.NewServer(&Server{
 		Config:   config,
 		Registry: registry,
-		Log: loggingtest.NopLog{},
+		Log:      loggingtest.NopLog{},
 	})
 	defer server.Close()
 

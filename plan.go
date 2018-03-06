@@ -19,9 +19,9 @@ type query struct {
 }
 
 type node struct {
-	definition define.Definition
+	definition  define.Definition
 	childProtos map[string]*node
-	query         *query
+	query       *query
 
 	result        data.Struct
 	backendFields []define.Field
@@ -77,7 +77,7 @@ func (q *query) result(ctx RequestContext) queryResult {
 
 func newNodeProto(d define.Definition, r *Registry) (*node, error) {
 	n := &node{
-		definition: d,
+		definition:  d,
 		childProtos: make(map[string]*node),
 	}
 
@@ -237,7 +237,7 @@ func (p *plan) instance() *plan {
 	queries := root.queries()
 
 	return &plan{
-		root: root,
+		root:    root,
 		queries: queries,
 	}
 }

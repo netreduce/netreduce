@@ -146,6 +146,7 @@ func (c ConnectorClient) GetJSON(path string) (interface{}, error) {
 }
 
 func (c *Config) Get(key string) string { return c.keys[key] }
+
 func (c *Config) Set(key, value string) {
 	if c.keys == nil {
 		c.keys = make(map[string]string)
