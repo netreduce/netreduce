@@ -25,9 +25,10 @@ type MapSpec struct {
 }
 
 type Definition struct {
-	value interface{}
+	path string
+	values []interface{}
 	fields []Field
-	query  QuerySpec
+	queries  []QuerySpec
 }
 
 var ZeroQuery QuerySpec
@@ -39,31 +40,52 @@ func Define(entries ...interface{}) Definition {
 		case Field:
 			d.fields = append(d.fields, et)
 		case QuerySpec:
-			d.query = et
+			d.queries = append(d.queries, et)
+		case int, float64, string:
+			d.values = append(d.values, et)
+		case Definition:
+			d.fields = append(d.fields, et.fields...)
+			d.queries = append(d.queries, et.queries...)
+			d.values = append(d.values, et.values...)
 		}
 	}
 
 	return d
 }
 
-func Extend(Definition, ...interface{}) Definition {
-	return Definition{}
+func Extend(d Definition, entries ...interface{}) Definition {
+	return Define(append(entries, d)...)
 }
 
-func Merge(...Definition) Definition {
-	return Definition{}
+func Merge(d ...Definition) Definition {
+	var entries []interface{}
+	for i := range d {
+		entries = append(entries, d[i])
+	}
+
+	return Define(entries...)
 }
 
-func (d Definition) Value() interface{} {
-	return d.value
+func Export(path string, entries ...interface{}) Definition {
+	d := Define(entries...)
+	d.path = path
+	return d
+}
+
+func (d Definition) Path() string {
+	return d.path
+}
+
+func (d Definition) Values() []interface{} {
+	return d.values
 }
 
 func (d Definition) Fields() []Field {
 	return d.fields
 }
 
-func (d Definition) Query() QuerySpec {
-	return d.query
+func (d Definition) Queries() []QuerySpec {
+	return d.queries
 }
 
 func Constant(name string, value interface{}) Field {
@@ -161,3 +183,7 @@ func Map(mapper func(interface{}) interface{}) MapSpec {
 func (m MapSpec) Mapper() func(interface{}) interface{} {
 	return m.mapper
 }
+
+func List() {}
+
+func Normalize(d Definition) Definition { return d }

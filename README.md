@@ -39,7 +39,7 @@ export "/empty" = define()
 // local, reusable definition (commas are optional if there are newlines between the args):
 let constants = define(
 	const("foo")
-	const("42")
+	const(42)
 	const(3.14)
 )
 
