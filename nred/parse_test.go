@@ -9,7 +9,7 @@ import (
 
 func TestParse(t *testing.T) {
 	t.Run("constant", func(t *testing.T) {
-		const code = `export "/foo" "foo"`
+		const code = `export "foo" "foo"`
 
 		buf := bytes.NewBufferString(code)
 		d, err := Parse(&registry.Registry{}, buf)
@@ -23,7 +23,7 @@ func TestParse(t *testing.T) {
 			return
 		}
 
-		if d[0].Path() != "/foo" {
+		if d[0].Path() != "foo" {
 			t.Error("failed to parse path")
 			return
 		}
@@ -41,7 +41,7 @@ func TestParse(t *testing.T) {
 	})
 
 	t.Run("empty definition", func(t *testing.T) {
-		const code = `export "/empty" = define()`
+		const code = `export "empty" = define()`
 
 		buf := bytes.NewBufferString(code)
 		d, err := Parse(&registry.Registry{}, buf)
@@ -55,7 +55,7 @@ func TestParse(t *testing.T) {
 			return
 		}
 
-		if d[0].Path() != "/empty" {
+		if d[0].Path() != "empty" {
 			t.Error("failed to parse path")
 			return
 		}

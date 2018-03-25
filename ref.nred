@@ -1,0 +1,205 @@
+/*
+scalar -> definition with a value
+const() -> definition with a field
+field() -> definition with a field
+contains() -> definition with a field
+query() -> definition with a query
+by() -> link description
+map() -> definition with ordered mapping
+mappingFunction() -> definition with mapping
+define -> definition (extend and merge are synonyms)
+define() -> definition
+<reference> -> anything, defined with let
+
+listing with rules
+
+export "name" <definition>
+let name <expression>
+
+scalar: int, float, string, bool or null
+
+const accepts: string, scalar
+
+define accepts: ...definition
+
+query accepts: connector
+
+field accepts: string
+
+contains accepts: string, definition
+
+by accepts: ...field selector
+
+map accepts: ...definition (mappings only)
+
+mappingFunction accepts: scalar only
+
+list accepts: ...definition
+*/
+
+export "hello" "Hello, world!"
+export "hello" = define("Hello, world!")
+
+let foo const("foo", 42)
+
+export "empty" define
+
+export "person" define(
+	field("name")
+	contains("pet", define(
+		field("kind")
+		field("name")
+	))
+)
+
+export "user" define(
+	query("https://api.example.org/user")
+	contains("roles", query("https://api.example.org/roles"))
+)
+
+let numbers list(1, 2, 3)
+export "numbers" define(
+	const("title", "my-numbers")
+	numbers // wrong!
+)
+export "numbers" numbers
+export "numbers" define(
+	const("title", "my-numbers")
+	contains("numbers", numbers)
+)
+
+export "foo" define(
+	query("https://api.example.org")
+	list(1, 2, 3)
+)
+
+export "foo" list(int("foo")) // -> [{"foo": 42}]
+
+export "foo" define(
+	"foo"
+	query("https://api.example.org")
+)
+
+let a b
+let b a
+
+let a define(b)
+let b define(a)
+
+let a define(contains("b", b))
+let b define(contains("a", a))
+
+// no currying, no override of reserved words:
+let foo define
+let define foo
+let bar foo(query(myConnector))
+
+// path?
+let userDetails define(
+	contains("details", query(user))
+	contains("roles", by(path("details/id")), query(roles))
+)
+
+let s struct(string("foo"))
+
+// does this work?
+export "curry" define("foo")("bar")
+
+export "one-foo" 1("foo")
+
+// equivalent to:
+export "one-foo" define(1)(define("foo"))
+
+// equivalent to:
+export "one-foo" define(define(1), define("foo"))
+
+// equivalent to:
+export "one-foo" define(1, "foo")
+
+// scalars, therefore equivalent to:
+export "one-foo" define("foo")
+
+// and simpler:
+export "one-foo" "foo"
+
+// --
+
+export "foo" number(42) // -> should be a number value
+export "foo" number("bar") // -> should be a definition with an opaque number field
+export "foo" field("bar") // -> should be a definition with an opaque field
+
+// --
+
+export "foo" define(
+	query("https://main")
+	query(
+		path(edit(requestPath, "^/api/", ""), resultField("auth", "type"), "details", resultField("user", "id"))
+		param("foo", requestParam("bar"))
+		resultField("url")
+	)
+)
+
+// this renders the by() structure is unnecessary, because the dependencies can be derived from the query
+
+// --
+
+let fooID oneOf(link("fooID"), requestPath)
+
+let foo define(
+	query(path(fooID), "https://foo")
+	query(param("foo", fooID), "https://foo-supplement")
+)
+
+export "foo" foo
+
+export "bar" define(
+	query(path(requestPath), "https://bar")
+	contains("foo", foo)
+)
+
+// --
+
+// TODO: how to query multiple
+export "bar" define(
+	query(path(requestPath), "https://user")
+	contains(
+		"detailed-roles"
+		// link("roles") this can be automatic
+		query(
+			path(link("roles"))
+			eachPath("https://role-details")
+
+			// or:
+			// param("role", link("roles"))
+			// eachParam("https://roles")
+		)
+
+		// or:
+		each(link("roles"), query(path(item), "https://roles"))
+	)
+)
+
+// --
+
+// what should be field() and resultField()
+// opaque, generic for field
+// field for resultField
+
+// --
+
+// how about:
+export "foo" define(
+	query("https://bar")
+	query("https://baz")
+	first
+)
+
+// which can be written as:
+export "foo" first(query("https://bar"), query("https://baz"))
+
+// --
+
+// use a link with different names
+
+let fooURL "https://foo"
+let queryByID query(path(oneOf(link("id"), link("fooID"))), fooURL)

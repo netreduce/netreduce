@@ -33,7 +33,7 @@ symbol-tag:nows:alias = [a-zA-Z_][a-zA-Z_0-9]*;
 symbol:nows = symbol-tag (nls dot nls symbol-tag)*;
 
 primitive-expression:alias = int | float | string | symbol;
-composite-expression       = symbol
+composite-expression       = expression
                              nls "(" (nl | comma)*
 	                    (expression
 	                     ((nl | comma)+ expression)*

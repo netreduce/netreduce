@@ -184,7 +184,7 @@ func Test(t *testing.T) {
 	htserver := httptest.NewServer(server)
 	defer htserver.Close()
 
-	data, err := netreduce.GetJSON(htserver.URL + "/product-collectin")
+	data, err := netreduce.GetJSON(htserver.URL + "/product-collection")
 	if err != nil {
 		t.Fatal(err)
 	}

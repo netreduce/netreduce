@@ -108,6 +108,7 @@ func (ctx RequestContext) Canceled() <-chan struct{} {
 }
 
 // TODO: what's the right name for path+query?
+// https://godoc.org/github.com/buger/jsonparser
 func (c ConnectorClient) GetJSON(path string) (interface{}, error) {
 	rsp, err := c.client.Get(c.baseURL + path)
 	if err != nil {

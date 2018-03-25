@@ -1,32 +1,47 @@
 package nred
 
 import (
-	"io"
-	"errors"
 	"strconv"
-	"bytes"
+	"io"
+	"fmt"
 
 	"github.com/netreduce/netreduce/nred/parser"
-	"github.com/netreduce/netreduce/registry"
 )
 
-var (
-	errNotImplemented = errors.New("not implemented")
-	errInvalidExpression = errors.New("invalid expression")
-	errDuplicateDefinition = errors.New("duplicate definition")
-	errDuplicateExport = errors.New("duplicate export")
+type expressionType int
+
+const (
+	intExp expressionType = iota
+	floatExp
+	opaqueNumberExp
+	stringExp
+	trueExp
+	falseExp
+	nilExp
+	symbolExp
+	compositeExp
 )
 
-func isReserved(r *registry.Registry, name string) bool {
-	return false
+type expression struct {
+	typ expressionType
+	primitive interface{}
+	children []expression
 }
 
-func parseInt(n *parser.Node) (int, error) {
-	return strconv.Atoi(n.Text())
+type namedExpressions map[string]expression
+
+func primitive(typ expressionType, value interface{}) expression {
+	return expression{
+		typ: typ,
+		primitive: value,
+	}
 }
 
-func parseFloat(n *parser.Node) (float64, error) {
-	return strconv.ParseFloat(n.Text(), 64)
+func composite(children []expression) expression {
+	return expression{
+		typ: compositeExp,
+		children: children,
+	}
 }
 
 func unescapeString(s string) string {
@@ -69,127 +84,142 @@ func unescapeString(s string) string {
 	return string(us)
 }
 
-func parseString(n *parser.Node) string {
-	text := n.Text()
-	return unescapeString(text[1:len(text) - 1])
-}
-
-func parseCompositeExpression(n *parser.Node) (interface{}, error) {
-	switch n.Nodes[0].Text() {
-	case "define":
-		return Define(), nil
-	default:
-		// constant, field, contains, link, query, mapping, or symbol representing a reference
-		return nil, errNotImplemented
-	}
-}
-
-func parseExpression(n *parser.Node) (interface{}, error) {
-	switch n.Name {
+func parsePrimitive(n *parser.Node) (exp expression, err error) {
+	typ := n.Name
+	switch typ {
 	case "int":
-		i, err := parseInt(n)
+		exp.typ = intExp
+		var v int
+		v, err = strconv.Atoi(n.Text())
 		if err != nil {
-			return nil, err
+			return
 		}
 
-		return Define(i), nil
+		exp.primitive = v
 	case "float":
-		f, err := parseFloat(n)
+		exp.typ = floatExp
+		var v float64
+		v, err = strconv.ParseFloat(n.Text(), 64)
 		if err != nil {
-			return nil, err
+			return
 		}
 
-		return Define(f), nil
+		exp.primitive = v
 	case "string":
-		s := parseString(n)
-		return Define(s), nil
-	case "composite-expression":
-		return parseCompositeExpression(n)
-	default:
-		return nil, errNotImplemented
-	}
-}
-
-func parseLocal(n *parser.Node) (string, interface{}, error) {
-	return "", nil, errNotImplemented
-}
-
-func parseExport(n *parser.Node) (d Definition, err error) {
-	path := parseString(n.Nodes[0])
-
-	var expression interface{}
-	if expression, err = parseExpression(n.Nodes[1]); err != nil {
-		return
+		exp.typ = stringExp
+		exp.primitive = unescapeString(n.Text())
+	case "symbol":
+		switch n.Text() {
+		case trueSymbol:
+			exp.typ = trueExp
+		case falseSymbol:
+			exp.typ = falseExp
+		case nilSymbol:
+			exp.typ = nilExp
+		default:
+			exp.typ = symbolExp
+			exp.primitive = n.Text()
+		}
 	}
 
-	var ok bool
-	if d, ok = expression.(Definition); !ok {
-		err = errInvalidExpression
-	}
-
-	d = Export(path, d)
 	return
 }
 
-func substituteLocal(exported map[string]Definition, local map[string]interface{}) ([]Definition, error) {
-	var defs []Definition
-	for _, d := range exported {
-		defs = append(defs, d)
+func parseOpaqueNumber(n *parser.Node) (exp expression, ok bool) {
+	if len(n.Nodes) != 2 {
+		return
 	}
 
-	return defs, nil
+	switch n.Nodes[1].Name {
+	case "int", "float":
+		exp.typ = opaqueNumberExp
+		exp.primitive = n.Nodes[1].Text()
+		ok = true
+	}
+
+	return
 }
 
-func Parse(reg *registry.Registry, r io.Reader) ([]Definition, error) {
+func parseComposite(n *parser.Node) (exp expression, err error) {
+	if n.Nodes[0].Text() == numberSymbol {
+		var ok bool
+		exp, ok = parseOpaqueNumber(n)
+		if ok {
+			return
+		}
+	}
+
+	exp.typ = compositeExp
+	for i := range n.Nodes {
+		var ce expression
+		ce, err = parseExpression(n.Nodes[i])
+		if err != nil {
+			return
+		}
+
+		exp.children = append(exp.children, ce)
+	}
+
+	return
+}
+
+func parseExpression(n *parser.Node) (expression, error) {
+	if n.Name == "composite-expression" {
+		return parseComposite(n)
+	}
+
+	return parsePrimitive(n)
+}
+
+func parseNodes(n []*parser.Node) (namedExpressions, namedExpressions, error) {
+	local := make(namedExpressions)
+	export := make(namedExpressions)
+
+	for i := range n {
+		p, err := parsePrimitive(n[i].Nodes[0])
+		if err != nil {
+			return nil, nil, err
+		}
+
+		name := p.primitive.(string)
+		value, err := parseExpression(n[i].Nodes[1])
+		if err != nil {
+			return nil, nil, err
+		}
+
+		switch n[i].Name {
+		case "local":
+			if _, has := local[name]; has {
+				return nil, nil, fmt.Errorf("duplicate local definition: %s", name)
+			}
+
+			local[name] = value
+		case "export":
+			if _, has := export[name]; has {
+				return nil, nil, fmt.Errorf("duplicate export: %s", name)
+			}
+
+			export[name] = value
+		}
+	}
+
+	return local, export, nil
+}
+
+func parse(r io.Reader) ([]Definition, error) {
 	n, err := parser.Parse(r)
 	if err != nil {
 		return nil, err
 	}
 
-	local := make(map[string]interface{})
-	exported := make(map[string]Definition)
-	for _, ni := range n.Nodes {
-		switch ni.Name {
-		case "local":
-			name, expression, err := parseLocal(ni)
-			if err != nil {
-				return nil, err
-			}
-
-			if _, ok := local[name]; ok || isReserved(reg, name) {
-				return nil, errDuplicateDefinition
-			}
-
-			local[name] = expression
-		case "export":
-			definition, err := parseExport(ni)
-			if err != nil {
-				return nil, err
-			}
-
-			path := definition.Path()
-			if _, ok := exported[path]; ok {
-				return nil, errDuplicateExport
-			}
-
-			exported[path] = definition
-		default:
-			return nil, errors.New("unsupported expression")
-		}
-	}
-
-	defs, err := substituteLocal(exported, local)
+	local, exports, err := parseNodes(n.Nodes)
 	if err != nil {
 		return nil, err
 	}
 
-	for i := range defs {
-		defs[i] = Normalize(defs[i])
+	if err = resolve(local, exports); err != nil {
+		return nil, err
 	}
 
-	return defs, nil
-}
-
-func ParseString(reg *registry.Registry, s string) ([]Definition, error) {
-	return Parse(reg, bytes.NewBufferString(s))
+	return defineExports(exports)
 }

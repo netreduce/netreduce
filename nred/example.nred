@@ -24,8 +24,8 @@ export "enriched-constants" extend(
 )
 
 // various mappings are possible, plus custom ones:
-let mapping1 renameField("foo", "bar");
-let mapping2 renameField("bar", "baz");
+let mapping1 map.renameField("foo", "bar");
+let mapping2 map.renameField("bar", "baz");
 
 // the backend returns {"foo": "blah"}
 // the query maps it to {"bar": "blah"}
@@ -54,6 +54,30 @@ export "/authenticated-user" define(
 	containsMany("roles", by("id"), define(
 		query("https://auth.example.org/roles")
 		string("role")
-		selectField("role")
+		map.flat("role")
 	))
 )
+
+// selected fields from one query, all fields from the other
+export "mixed" define(
+	contains("one", define(
+		query(structOne)
+		string("foo")
+	))
+	contains("other", query(otherStruct))
+	map.flat
+)
+
+let customDefine define(response.errMissingField)
+
+export "foo" customDefine(
+	string("foo")
+	query(foo)
+)
+
+export "bar" customDefine(
+	string("bar")
+	query(bar)
+)
+
+export "curry" define("foo")("bar")("baz")
