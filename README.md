@@ -31,7 +31,7 @@ version of netreduce is released.**
 export "/hello" "Hello, world!"
 
 // pass through:
-export "/original" query("https://api.example.org")
+export "/pass-through" query("https://api.example.org")
 
 // empty, returns {} (equals, and semicolons are optional):
 export "/empty" = define()
@@ -57,11 +57,12 @@ let mapping1 renameField("foo", "bar");
 let mapping2 renameField("bar", "baz");
 
 // the backend returns {"foo": "blah"}
-// the query maps it to {"bar": "blah"}
-// the definition maps it to {"baz": "blah"}
+// it's renamed to {"bar": "blah"}
+// then to {"baz": "blah"}
 export "/foo-bar-baz" define(
-	query("https://api.example.org", mapping1)
-	string("bar")
+	query("https://api.example.org")
+	string("foo")
+	mapping1
 	mapping2
 
 	// we don't need this here, just demoing comments:
@@ -80,8 +81,8 @@ export "/authenticated-user" define(
 	int("level")
 	float("iris-radius-when-seen-this")
 
-	containsMany("roles", by("id"), define(
-		query("https://auth.example.org/roles")
+	containsMany("roles", define(
+		query("https://auth.example.org/roles", path(link("id")))
 		string("role")
 		selectField("role")
 	))
