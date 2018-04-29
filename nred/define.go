@@ -6,28 +6,28 @@ import (
 )
 
 const (
-	letSymbol = "let"
-	exportSymbol = "export"
-	defineSymbol = "define"
-	querySymbol = "query"
+	letSymbol      = "let"
+	exportSymbol   = "export"
+	defineSymbol   = "define"
+	querySymbol    = "query"
 	containsSymbol = "contains"
-	constSymbol = "const"
-	intSymbol = "int"
-	floatSymbol = "float"
-	numberSymbol = "number"
-	stringSymbol = "string"
-	boolSymbol = "bool" // TODO
-	fieldSymbol = "field"
-	trueSymbol = "true"
-	falseSymbol = "false"
-	nilSymbol = "nil"
+	constSymbol    = "const"
+	intSymbol      = "int"
+	floatSymbol    = "float"
+	numberSymbol   = "number"
+	stringSymbol   = "string"
+	boolSymbol     = "bool" // TODO
+	fieldSymbol    = "field"
+	trueSymbol     = "true"
+	falseSymbol    = "false"
+	nilSymbol      = "nil"
 )
 
 const urlConnectorName = "url"
 
 var (
 	errFieldArgsCount = errors.New("invalid number of field arguments")
-	errFieldName = errors.New("invalid field name argument")
+	errFieldName      = errors.New("invalid field name argument")
 )
 
 func Reserved(name string) bool {
@@ -47,7 +47,7 @@ func Reserved(name string) bool {
 		trueSymbol,
 		falseSymbol,
 		nilSymbol,
-	}{
+	} {
 		if name == r {
 			return true
 		}

@@ -19,16 +19,26 @@ const (
 	IntField
 	FloatField
 	StringField
+	BoolField
 	ContainsField
 )
 
-var fieldStrings = []string{"const", "generic", "number", "int", "float", "string", "contains"}
+var fieldStrings = []string{
+	"const",
+	"generic",
+	"number",
+	"int",
+	"float",
+	"string",
+	"bool",
+	"contains",
+}
 
 type OpaqueNumber string
 
 type Field struct {
-	typ FieldType
-	name string
+	typ   FieldType
+	name  string
 	value interface{}
 }
 
@@ -42,11 +52,11 @@ type QuerySpec struct {
 }
 
 type Definition struct {
-	name string
-	value interface{}
+	name    string
+	value   interface{}
 	queries []QuerySpec
-	fields []Field
-	rules []RuleSpec
+	fields  []Field
+	rules   []RuleSpec
 }
 
 var NilValue = &struct{}{}
@@ -63,51 +73,51 @@ func (l FieldType) String() string { return enumString(int(l), fieldStrings) }
 
 func Const(name string, value interface{}) Field {
 	return Field{
-		typ: ConstField,
-		name: name,
+		typ:   ConstField,
+		name:  name,
 		value: value,
 	}
 }
 
 func Generic(name string) Field {
 	return Field{
-		typ: GenericField,
+		typ:  GenericField,
 		name: name,
 	}
 }
 
 func Number(name string) Field {
 	return Field{
-		typ: OpaqueNumberField,
+		typ:  OpaqueNumberField,
 		name: name,
 	}
 }
 
 func Int(name string) Field {
 	return Field{
-		typ: IntField,
+		typ:  IntField,
 		name: name,
 	}
 }
 
 func Float(name string) Field {
 	return Field{
-		typ: FloatField,
+		typ:  FloatField,
 		name: name,
 	}
 }
 
 func String(name string) Field {
 	return Field{
-		typ: StringField,
+		typ:  StringField,
 		name: name,
 	}
 }
 
 func Contains(name string, d Definition) Field {
 	return Field{
-		typ: ContainsField,
-		name: name,
+		typ:   ContainsField,
+		name:  name,
 		value: d,
 	}
 }

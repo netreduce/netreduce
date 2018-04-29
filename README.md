@@ -81,10 +81,10 @@ export "/authenticated-user" define(
 	int("level")
 	float("iris-radius-when-seen-this")
 
-	containsMany("roles", define(
+	contains("roles", define(
 		query("https://auth.example.org/roles", path(link("id")))
-		string("role")
-		selectField("role")
+		string("name")
+		selectField("name")
 	))
 )
 ```

@@ -1,9 +1,9 @@
 package nred
 
 import (
-	"strconv"
-	"io"
 	"fmt"
+	"io"
+	"strconv"
 
 	"github.com/netreduce/netreduce/nred/parser"
 )
@@ -23,30 +23,30 @@ const (
 )
 
 type expression struct {
-	typ expressionType
+	typ       expressionType
 	primitive interface{}
-	children []expression
+	children  []expression
 }
 
 type namedExpressions map[string]expression
 
 func primitive(typ expressionType, value interface{}) expression {
 	return expression{
-		typ: typ,
+		typ:       typ,
 		primitive: value,
 	}
 }
 
 func composite(children []expression) expression {
 	return expression{
-		typ: compositeExp,
+		typ:      compositeExp,
 		children: children,
 	}
 }
 
 func unescapeString(s string) string {
 	var (
-		us []byte
+		us      []byte
 		escaped bool
 	)
 

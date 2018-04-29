@@ -1,3 +1,3 @@
 package registry
 
-type Registry struct {}
+type Registry struct{}
