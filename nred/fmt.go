@@ -4,7 +4,16 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"strconv"
 )
+
+func enumString(v int, known []string) string {
+	if v < len(known) {
+		return known[v]
+	}
+
+	return strconv.Itoa(v)
+}
 
 type writerTo interface {
 	writeTo(w io.Writer) error
@@ -53,6 +62,7 @@ func fprint(w io.Writer, v interface{}) (err error) {
 }
 
 func (f Field) writeTo(w io.Writer) (err error) {
+	// TODO: replace with hasValue/canHaveValue check
 	switch f.typ {
 	case ConstField, ContainsField:
 		_, err = fmt.Fprintf(w, `%v("%s", `, f.typ, f.name)
