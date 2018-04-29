@@ -251,7 +251,12 @@ func defineBySymbol(name string, args []expression) (d Definition, err error) {
 
 		d = Define(untypeDefs(ds)...)
 	default:
-		d = Define(Rule(name))
+		var a []interface{}
+		if a, err = defineRuleArgs(args); err != nil {
+			return
+		}
+
+		d = Define(Rule(name, a...))
 	}
 
 	return

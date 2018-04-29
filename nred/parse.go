@@ -44,46 +44,6 @@ func composite(children []expression) expression {
 	}
 }
 
-func unescapeString(s string) string {
-	var (
-		us      []byte
-		escaped bool
-	)
-
-	for _, b := range []byte(s) {
-		if escaped {
-			switch b {
-			case 'b':
-				us = append(us, '\b')
-			case 'f':
-				us = append(us, '\f')
-			case 'n':
-				us = append(us, '\n')
-			case 'r':
-				us = append(us, '\r')
-			case 't':
-				us = append(us, '\t')
-			case 'v':
-				us = append(us, '\v')
-			default:
-				us = append(us, b)
-			}
-
-			escaped = false
-			continue
-		}
-
-		if b == '\\' {
-			escaped = true
-			continue
-		}
-
-		us = append(us, b)
-	}
-
-	return string(us)
-}
-
 func parsePrimitive(n *parser.Node) (exp expression, err error) {
 	typ := n.Name
 	switch typ {
@@ -107,7 +67,8 @@ func parsePrimitive(n *parser.Node) (exp expression, err error) {
 		exp.primitive = v
 	case "string":
 		exp.typ = stringExp
-		exp.primitive = unescapeString(n.Text())
+		t := n.Text()
+		exp.primitive = unescapeString(t[1:len(t) - 1])
 	case "symbol":
 		switch n.Text() {
 		case trueSymbol:
@@ -206,7 +167,7 @@ func parseNodes(n []*parser.Node) (namedExpressions, namedExpressions, error) {
 	return local, export, nil
 }
 
-func parse(r io.Reader) ([]Definition, error) {
+func Parse(r io.Reader) ([]Definition, error) {
 	n, err := parser.Parse(r)
 	if err != nil {
 		return nil, err

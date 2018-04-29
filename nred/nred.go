@@ -162,3 +162,11 @@ func Export(name string, d Definition) Definition {
 	d.name = name
 	return d
 }
+
+func (d Definition) Name() string {
+	return d.name
+}
+
+func (d Definition) Value() interface{} {
+	return d.value
+}

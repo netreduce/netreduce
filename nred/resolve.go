@@ -32,7 +32,7 @@ func resolveComposite(
 	exp expression,
 ) (expression, error) {
 	for i := range exp.children {
-		cexp, err := resolveExpression(all, resolving, exp)
+		cexp, err := resolveExpression(all, resolving, exp.children[i])
 		if err != nil {
 			return exp, err
 		}

@@ -38,15 +38,15 @@ export "/empty" = define()
 
 // local, reusable definition (commas are optional if there are newlines between the args):
 let constants = define(
-	const("foo")
-	const(42)
-	const(3.14)
+	const("a", "foo")
+	const("b", 42)
+	const("c", 3.14)
 )
 
 export "constants" constants
 
 // only the defined fields are returned by default plus the ID if exists:
-export "enriched-constants" extend(
+export "enriched-constants" define(
 	constants
 	query("https://api.example.org")
 	string("foo")
