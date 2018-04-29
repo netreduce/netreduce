@@ -149,7 +149,9 @@ func Define(a ...interface{}) Definition {
 			d.queries = append(d.queries, at.queries...)
 			d.fields = append(d.fields, at.fields...)
 			d.rules = append(d.rules, at.rules...)
-			d.value = at.value
+			if at.value != nil {
+				d.value = at.value
+			}
 		default:
 			d.value = a[i]
 		}

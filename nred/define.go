@@ -105,7 +105,7 @@ func defineNamedField(args []expression, field func(string) Field) (d Definition
 	return
 }
 
-func untypeDefs(d []Definition) []interface{} {
+func untypedDefs(d []Definition) []interface{} {
 	var i []interface{}
 	for _, di := range d {
 		i = append(i, di)
@@ -130,7 +130,7 @@ func defineContains(args []expression) (d Definition, err error) {
 		return
 	}
 
-	d = Define(Contains(name, Define(untypeDefs(defs)...)))
+	d = Define(Contains(name, Define(untypedDefs(defs)...)))
 	return
 }
 
@@ -249,7 +249,7 @@ func defineBySymbol(name string, args []expression) (d Definition, err error) {
 			return
 		}
 
-		d = Define(untypeDefs(ds)...)
+		d = Define(untypedDefs(ds)...)
 	default:
 		var a []interface{}
 		if a, err = defineRuleArgs(args); err != nil {
@@ -278,7 +278,7 @@ func defineComposite(exp expression) (d Definition, err error) {
 			return
 		}
 
-		d = Define(append([]interface{}{d}, untypeDefs(args)...)...)
+		d = Define(append([]interface{}{d}, untypedDefs(args)...)...)
 	}
 
 	return

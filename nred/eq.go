@@ -14,7 +14,7 @@ func rulesEq(r ...RuleSpec) bool {
 	}
 
 	for i := range r[0].args {
-		if r0, ok := r[0].args[i].(RuleSpec); ok  {
+		if r0, ok := r[0].args[i].(RuleSpec); ok {
 			if r1, ok := r[1].args[i].(RuleSpec); !ok || !rulesEq(r0, r1) {
 				return false
 			}
@@ -42,7 +42,7 @@ func ruleSetsEq(left, right []RuleSpec) bool {
 			}
 
 			found = true
-			rr = append(rr[:i], rr[i + 1:]...)
+			rr = append(rr[:i], rr[i+1:]...)
 			break
 		}
 
@@ -72,7 +72,7 @@ func queriesEq(left, right []QuerySpec) bool {
 			}
 
 			found = true
-			rq = append(rq[:i], rq[i + 1:]...)
+			rq = append(rq[:i], rq[i+1:]...)
 			break
 		}
 
@@ -126,7 +126,7 @@ func fieldSetsEq(left, right []Field) bool {
 			}
 
 			found = true
-			rf = append(rf[:i], rf[i + 1:]...)
+			rf = append(rf[:i], rf[i+1:]...)
 			break
 		}
 

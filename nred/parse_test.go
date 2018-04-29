@@ -5,7 +5,27 @@ import (
 	"testing"
 )
 
-// destroys expected slice
+type parseTestItem struct {
+	title      string
+	doc        string
+	expect     Definition
+	expectMany []Definition
+	expectNone bool
+}
+
+func (test parseTestItem) run(t *testing.T) {
+	t.Run(test.title, func(t *testing.T) {
+		if test.expectNone {
+			testParse(t, test.doc)
+		} else if len(test.expectMany) > 0 {
+			testParse(t, test.doc, test.expectMany...)
+		} else {
+			testParse(t, test.doc, test.expect)
+		}
+	})
+}
+
+// destroys the expected slice
 func testParse(t *testing.T, doc string, expected ...Definition) {
 	d, err := Parse(bytes.NewBufferString(doc))
 	if err != nil {
@@ -27,7 +47,7 @@ func testParse(t *testing.T, doc string, expected ...Definition) {
 			}
 
 			found = true
-			expected = append(expected[:i], expected[i + 1:]...)
+			expected = append(expected[:i], expected[i+1:]...)
 			break
 		}
 
@@ -42,24 +62,18 @@ func testParse(t *testing.T, doc string, expected ...Definition) {
 }
 
 func TestParse(t *testing.T) {
-	for _, test := range []struct{
-		title string
-		doc string
-		expected Definition
-		expectedMany []Definition
-		noneExpected bool
-	}{{
-		title: "hello",
-		doc: `export "/hello" "Hello, world!"`,
-		expected: Export("/hello", Define("Hello, world!")),
+	for _, test := range []parseTestItem{{
+		title:  "hello",
+		doc:    `export "/hello" "Hello, world!"`,
+		expect: Export("/hello", Define("Hello, world!")),
 	}, {
-		title: "pass through",
-		doc: `export "/pass-through" query("https://api.example.org")`,
-		expected: Export("/pass-through", Define(Query(Rule("url", "https://api.example.org")))),
+		title:  "pass through",
+		doc:    `export "/pass-through" query("https://api.example.org")`,
+		expect: Export("/pass-through", Define(Query(Rule("url", "https://api.example.org")))),
 	}, {
-		title: "empty",
-		doc: `export "/empty" = define()`,
-		expected: Export("/empty", Define()),
+		title:  "empty",
+		doc:    `export "/empty" = define()`,
+		expect: Export("/empty", Define()),
 	}, {
 		title: "only local",
 		doc: `
@@ -69,7 +83,7 @@ func TestParse(t *testing.T) {
 				const(3.14)
 			)
 		`,
-		noneExpected: true,
+		expectNone: true,
 	}, {
 		title: "reusable local",
 		doc: `
@@ -81,7 +95,7 @@ func TestParse(t *testing.T) {
 
 			export "/constants" constants
 		`,
-		expected: Export("/constants", Define(
+		expect: Export("/constants", Define(
 			Const("a", "foo"),
 			Const("b", 42),
 			Const("c", 3.14),
@@ -101,7 +115,7 @@ func TestParse(t *testing.T) {
 				string("foo")
 			)
 		`,
-		expected: Export("enriched-constants", Define(
+		expect: Export("enriched-constants", Define(
 			Const("a", "foo"),
 			Const("b", 42),
 			Const("c", 3.14),
@@ -121,7 +135,7 @@ func TestParse(t *testing.T) {
 				mapping2
 			)
 		`,
-		expected: Export("/foo-bar-baz", Define(
+		expect: Export("/foo-bar-baz", Define(
 			Query(Rule("url", "https://api.example.org")),
 			String("foo"),
 			Rule("renameField", "foo", "bar"),
@@ -147,7 +161,7 @@ func TestParse(t *testing.T) {
 				/* int("qux") */
 			)
 		`,
-		expected: Export("/foo-bar-baz", Define(
+		expect: Export("/foo-bar-baz", Define(
 			Query(Rule("url", "https://api.example.org")),
 			String("foo"),
 			Rule("renameField", "foo", "bar"),
@@ -171,7 +185,7 @@ func TestParse(t *testing.T) {
 				))
 			)
 		`,
-		expected: Export("/authenticated-user", Define(
+		expect: Export("/authenticated-user", Define(
 			Query(Rule("url", "https://auth.example.org/info")),
 			Query(Rule("authConnector.extended")),
 			String("name"),
@@ -186,15 +200,48 @@ func TestParse(t *testing.T) {
 				Rule("selectField", "name"),
 			)),
 		)),
-	}}{
-		t.Run(test.title, func(t *testing.T) {
-			if test.noneExpected {
-				testParse(t, test.doc)
-			} else if len(test.expectedMany) > 0 {
-				testParse(t, test.doc, test.expectedMany...)
-			} else {
-				testParse(t, test.doc, test.expected)
-			}
-		})
+	}} {
+		test.run(t)
+	}
+}
+
+func TestParseRef(t *testing.T) {
+	for _, test := range []parseTestItem{{
+		title:  "value as define",
+		doc:    `export "/hello" define("Hello, world!")`,
+		expect: Export("/hello", Define("Hello, world!")),
+	}, {
+		title: "const as definition",
+		doc: `
+			let foo = const("foo", 42)
+			export "/foo" foo
+		`,
+		expect: Export("/foo", Define(Const("foo", 42))),
+	}, {
+		title:  "empty define",
+		doc:    `export "empty" define`,
+		expect: Export("empty", Define()),
+	}, {
+		title:  "rule without args",
+		doc:    `export "foo" bar`,
+		expect: Export("foo", Define(Rule("bar"))),
+	}, {
+		title:  "curry define",
+		doc:    `export "foo" define(const("a", 1))(const("b", 2))`,
+		expect: Export("foo", Define(Const("a", 1), Const("b", 2))),
+	}, {
+		title:  "primitive as initial definition",
+		doc:    `export "one-foo" 1(const("foo", 42))`,
+		expect: Export("one-foo", Define(1, Const("foo", 42))),
+	}, {
+		title:  "primitive as initial definition, explained",
+		doc:    `export "one-foo" define(1)(define(const("foo", 42)))`,
+		expect: Export("one-foo", Define(1, Const("foo", 42))),
+	}, {
+		title:  "primitive as initial definition, simplified",
+		doc:    `export "one-foo" define(1, const("foo", 42))`,
+		expect: Export("one-foo", Define(1, Const("foo", 42))),
+	}} {
+		test.run(t)
 	}
 }

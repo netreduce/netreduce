@@ -1,9 +1,9 @@
 package nred
 
 import (
+	"bytes"
 	"fmt"
 	"io"
-	"bytes"
 )
 
 type writerTo interface {
@@ -167,9 +167,9 @@ func (d Definition) writeTo(w io.Writer) error {
 	return nil
 }
 
-func (f Field) String() string { return toString(f) }
-func (r RuleSpec) String() string { return toString(r) }
-func (q QuerySpec) String() string { return toString(q) }
+func (f Field) String() string      { return toString(f) }
+func (r RuleSpec) String() string   { return toString(r) }
+func (q QuerySpec) String() string  { return toString(q) }
 func (d Definition) String() string { return toString(d) }
 
 func Fprint(w io.Writer, d ...Definition) error {

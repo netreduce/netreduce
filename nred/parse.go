@@ -68,7 +68,7 @@ func parsePrimitive(n *parser.Node) (exp expression, err error) {
 	case "string":
 		exp.typ = stringExp
 		t := n.Text()
-		exp.primitive = unescapeString(t[1:len(t) - 1])
+		exp.primitive = unescapeString(t[1 : len(t)-1])
 	case "symbol":
 		switch n.Text() {
 		case trueSymbol:
