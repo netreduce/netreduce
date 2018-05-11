@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+
+	"github.com/netreduce/netreduce/data"
 )
 
 func enumString(v int, known []string) string {
@@ -29,19 +31,8 @@ func toString(wt writerTo) string {
 }
 
 func fprintf(w io.Writer, f string, v interface{}) (err error) {
-	if v == NilValue {
-		_, err = fmt.Fprint(w, "null")
-		return
-	}
-
 	switch vt := v.(type) {
-	case int:
-		_, err = fmt.Fprintf(w, f, vt)
-	case float64:
-		_, err = fmt.Fprintf(w, f, vt)
-	case string:
-		_, err = fmt.Fprintf(w, f, fmt.Sprintf(`"%s"`, escapeString(vt)))
-	case bool:
+	case data.Data:
 		_, err = fmt.Fprintf(w, f, vt)
 	default:
 		if wt, ok := v.(writerTo); ok {
@@ -141,7 +132,7 @@ func (d Definition) writeTo(w io.Writer) error {
 	}
 
 	var args []interface{}
-	if d.value != nil {
+	if d.value != data.Zero() {
 		args = append(args, d.value)
 	}
 

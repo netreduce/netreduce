@@ -3,6 +3,8 @@ package nred
 import (
 	"bytes"
 	"testing"
+
+	"github.com/netreduce/netreduce/data"
 )
 
 type parseTestItem struct {
@@ -65,15 +67,18 @@ func TestParse(t *testing.T) {
 	for _, test := range []parseTestItem{{
 		title:  "hello",
 		doc:    `export "/hello" "Hello, world!"`,
-		expect: Export("/hello", Define("Hello, world!")),
+		expect: Export("/hello", Definition{}.SetValue(data.String("Hello, world!"))),
 	}, {
 		title:  "pass through",
 		doc:    `export "/pass-through" query("https://api.example.org")`,
-		expect: Export("/pass-through", Define(Query(Rule("url", "https://api.example.org")))),
+		expect: Export(
+			"/pass-through",
+			Definition{}.Query(Query(Rule("url", "https://api.example.org"))),
+		),
 	}, {
 		title:  "empty",
 		doc:    `export "/empty" = define()`,
-		expect: Export("/empty", Define()),
+		expect: Export("/empty", Definition{}),
 	}, {
 		title: "only local",
 		doc: `
@@ -95,7 +100,7 @@ func TestParse(t *testing.T) {
 
 			export "/constants" constants
 		`,
-		expect: Export("/constants", Define(
+		expect: Export("/constants", Definition{}.Field(
 			Const("a", "foo"),
 			Const("b", 42),
 			Const("c", 3.14),
@@ -115,11 +120,13 @@ func TestParse(t *testing.T) {
 				string("foo")
 			)
 		`,
-		expect: Export("enriched-constants", Define(
+		expect: Export("enriched-constants", Definition{}.Field(
 			Const("a", "foo"),
 			Const("b", 42),
 			Const("c", 3.14),
+		).Query(
 			Query(Rule("url", "https://api.example.org")),
+		).Field(
 			String("foo"),
 		)),
 	}, {
@@ -135,9 +142,11 @@ func TestParse(t *testing.T) {
 				mapping2
 			)
 		`,
-		expect: Export("/foo-bar-baz", Define(
+		expect: Export("/foo-bar-baz", Definition{}.Query(
 			Query(Rule("url", "https://api.example.org")),
+		).Field(
 			String("foo"),
+		).Rule(
 			Rule("renameField", "foo", "bar"),
 			Rule("renameField", "bar", "baz"),
 		)),
@@ -161,9 +170,11 @@ func TestParse(t *testing.T) {
 				/* int("qux") */
 			)
 		`,
-		expect: Export("/foo-bar-baz", Define(
+		expect: Export("/foo-bar-baz", Definition{}.Query(
 			Query(Rule("url", "https://api.example.org")),
+		).Field(
 			String("foo"),
+		).Rule(
 			Rule("renameField", "foo", "bar"),
 			Rule("renameField", "bar", "baz"),
 		)),
@@ -185,18 +196,21 @@ func TestParse(t *testing.T) {
 				))
 			)
 		`,
-		expect: Export("/authenticated-user", Define(
+		expect: Export("/authenticated-user", Definition{}.Query(
 			Query(Rule("url", "https://auth.example.org/info")),
 			Query(Rule("authConnector.extended")),
+		).Field(
 			String("name"),
 			Int("level"),
 			Float("iris-radius-when-seen-this"),
-			Contains("roles", Define(
+			Contains("roles", Definition{}.Query(
 				Query(
 					Rule("url", "https://auth.example.org/roles"),
 					Rule("path", Rule("link", "id")),
 				),
+			).Field(
 				String("name"),
+			).Rule(
 				Rule("selectField", "name"),
 			)),
 		)),
@@ -209,38 +223,50 @@ func TestParseRef(t *testing.T) {
 	for _, test := range []parseTestItem{{
 		title:  "value as define",
 		doc:    `export "/hello" define("Hello, world!")`,
-		expect: Export("/hello", Define("Hello, world!")),
+		expect: Export("/hello", Definition{}.SetValue(data.String("Hello, world!"))),
 	}, {
 		title: "const as definition",
 		doc: `
 			let foo = const("foo", 42)
 			export "/foo" foo
 		`,
-		expect: Export("/foo", Define(Const("foo", 42))),
+		expect: Export("/foo", Definition{}.Field(Const("foo", 42))),
 	}, {
 		title:  "empty define",
 		doc:    `export "empty" define`,
-		expect: Export("empty", Define()),
+		expect: Export("empty", Definition{}),
 	}, {
 		title:  "rule without args",
 		doc:    `export "foo" bar`,
-		expect: Export("foo", Define(Rule("bar"))),
+		expect: Export("foo", Definition{}.Rule(Rule("bar"))),
 	}, {
 		title:  "curry define",
 		doc:    `export "foo" define(const("a", 1))(const("b", 2))`,
-		expect: Export("foo", Define(Const("a", 1), Const("b", 2))),
+		expect: Export("foo", Definition{}.Field(Const("a", 1), Const("b", 2))),
 	}, {
 		title:  "primitive as initial definition",
 		doc:    `export "one-foo" 1(const("foo", 42))`,
-		expect: Export("one-foo", Define(1, Const("foo", 42))),
+		expect: Export("one-foo", Definition{}.SetValue(
+			data.Int(1),
+		).Field(
+			Const("foo", 42),
+		)),
 	}, {
 		title:  "primitive as initial definition, explained",
 		doc:    `export "one-foo" define(1)(define(const("foo", 42)))`,
-		expect: Export("one-foo", Define(1, Const("foo", 42))),
+		expect: Export("one-foo", Definition{}.SetValue(
+			data.Int(1),
+		).Field(
+			Const("foo", 42)),
+		),
 	}, {
 		title:  "primitive as initial definition, simplified",
 		doc:    `export "one-foo" define(1, const("foo", 42))`,
-		expect: Export("one-foo", Define(1, Const("foo", 42))),
+		expect: Export("one-foo", Definition{}.SetValue(
+			data.Int(1),
+		).Field(
+			Const("foo", 42),
+		)),
 	}} {
 		test.run(t)
 	}

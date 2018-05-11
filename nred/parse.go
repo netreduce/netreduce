@@ -173,6 +173,20 @@ func Parse(r io.Reader) ([]Definition, error) {
 		return nil, err
 	}
 
+	if len(n.Nodes) == 1 && n.Nodes[0].Name == "single-expression" {
+		e, err := parseExpression(n.Nodes[0])
+		if err != nil {
+			return nil, err
+		}
+
+		d, err := define(e)
+		if err != nil {
+			return nil, err
+		}
+
+		return []Definition{d}, nil
+	}
+
 	local, exports, err := parseNodes(n.Nodes)
 	if err != nil {
 		return nil, err

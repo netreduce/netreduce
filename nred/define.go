@@ -3,6 +3,8 @@ package nred
 import (
 	"errors"
 	"fmt"
+
+	"github.com/netreduce/netreduce/data"
 )
 
 const (
@@ -87,7 +89,7 @@ func defineConst(args []expression) (d Definition, err error) {
 
 	switch args[1].typ {
 	case intExp, floatExp, opaqueNumberExp, stringExp, trueExp, falseExp, nilExp:
-		d = Define(Const(name, args[1].primitive))
+		d = Definition{}.Field(Const(name, args[1].primitive))
 	default:
 		err = errors.New("invalid const field value")
 	}
@@ -101,17 +103,8 @@ func defineNamedField(args []expression, field func(string) Field) (d Definition
 		return
 	}
 
-	d = Define(field(name))
+	d = Definition{}.Field(field(name))
 	return
-}
-
-func untypedDefs(d []Definition) []interface{} {
-	var i []interface{}
-	for _, di := range d {
-		i = append(i, di)
-	}
-
-	return i
 }
 
 func defineContains(args []expression) (d Definition, err error) {
@@ -130,7 +123,7 @@ func defineContains(args []expression) (d Definition, err error) {
 		return
 	}
 
-	d = Define(Contains(name, Define(untypedDefs(defs)...)))
+	d = Definition{}.Field(Contains(name, Definition{}.Extend(defs...)))
 	return
 }
 
@@ -232,7 +225,7 @@ func defineQuery(args []expression) (d Definition, err error) {
 		r = append(r, rule)
 	}
 
-	d = Define(Query(r...))
+	d = Definition{}.Query(Query(r...))
 	return
 }
 
@@ -249,14 +242,14 @@ func defineBySymbol(name string, args []expression) (d Definition, err error) {
 			return
 		}
 
-		d = Define(untypedDefs(ds)...)
+		d = Definition{}.Extend(ds...)
 	default:
 		var a []interface{}
 		if a, err = defineRuleArgs(args); err != nil {
 			return
 		}
 
-		d = Define(Rule(name, a...))
+		d = Definition{}.Rule(Rule(name, a...))
 	}
 
 	return
@@ -278,7 +271,7 @@ func defineComposite(exp expression) (d Definition, err error) {
 			return
 		}
 
-		d = Define(append([]interface{}{d}, untypedDefs(args)...)...)
+		d = d.Extend(args...)
 	}
 
 	return
@@ -287,20 +280,23 @@ func defineComposite(exp expression) (d Definition, err error) {
 func define(exp expression) (d Definition, err error) {
 	switch exp.typ {
 	case opaqueNumberExp:
-		d = Define(OpaqueNumber(exp.primitive.(string)))
+		d = d.SetValue(data.Number(exp.primitive.(string)))
 	case trueExp:
-		d = Define(true)
+		d = d.SetValue(data.True())
 	case falseExp:
-		d = Define(false)
+		d = d.SetValue(data.False())
 	case nilExp:
-		d = Define(NilValue)
+		d = d.SetValue(data.Nil())
 	case symbolExp:
 		d, err = defineBySymbol(exp.primitive.(string), nil)
 	case compositeExp:
 		d, err = defineComposite(exp)
-	default:
-		// int, float, string
-		d = Define(exp.primitive)
+	case intExp:
+		d = Definition{}.SetValue(data.Int(exp.primitive.(int)))
+	case floatExp:
+		d = Definition{}.SetValue(data.Float(exp.primitive.(float64)))
+	case stringExp:
+		d = Definition{}.SetValue(data.String(exp.primitive.(string)))
 	}
 
 	return

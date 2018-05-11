@@ -1,5 +1,5 @@
 // definition of the nred syntax, the endpoint configuration language of Netreduce (https://www.netreduce.org)
-nred:root = definitions;
+nred:root = definitions | single-expression;
 
 space:ws    = [ \b\f\r\t\v];
 nl:alias    = "\n";
@@ -41,6 +41,7 @@ composite-expression       = expression
 	                    ")";
 
 expression:alias  = primitive-expression | composite-expression;
+single-expression = expression;
 local             = "let" nls symbol nls opteq nls expression;
 export            = "export" nls string nls opteq nls expression;
 definitions:alias = (nl | colon)* ((local | export) (nl | colon)*)*;

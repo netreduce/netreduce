@@ -2,84 +2,55 @@ package data
 
 import "fmt"
 
-type Struct map[string]interface{}
+type DataType int
 
-type List []interface{}
+const (
+	ZeroData DataType = iota
+	NumberData
+	IntData
+	FloatData
+	StringData
+	BoolData
+	NilData
+)
 
-func Int(data interface{}, name string) int {
-	i, err := GetInt(data, name)
-	if err != nil {
-		panic(err)
-	}
-
-	return i
+type Data struct {
+	typ DataType
+	value interface{}
 }
 
-func GetInt(data interface{}, name string) (int, error) {
-	var (
-		v  interface{}
-		ok bool
-	)
+var zero Data
 
-	switch dt := data.(type) {
-	case map[string]interface{}:
-		v, ok = dt[name]
-	case Struct:
-		v, ok = dt[name]
+func Zero() Data { return zero }
+func Number(n string) Data { return Data{typ: NumberData, value: n} }
+func Int(n int) Data { return Data{typ: IntData, value: n} }
+func Float(f float64) Data { return Data{typ: FloatData, value: f} }
+func String(s string) Data { return Data{typ: StringData, value: s} }
+func True() Data { return Data{typ: BoolData, value: true} }
+func False() Data { return Data{typ: BoolData, value: false} }
+func Nil() Data { return Data{typ: NilData} }
+
+func escapeString(s string) string {
+	var b []byte
+	for i := range s {
+		switch s[i] {
+		case '\\', '"':
+			b = append(b, '\\')
+		}
+
+		b = append(b, s[i])
+	}
+
+	return string(b)
+}
+
+func (d Data) String() string {
+	switch d.typ {
+	case ZeroData:
+		return "<zero-data>"
+	case StringData:
+		return fmt.Sprintf(`"%s"`, escapeString(d.value.(string)))
 	default:
-		return 0, fmt.Errorf("not a struct")
-	}
-
-	missingOrInvalid := func() error {
-		return fmt.Errorf("missing or invalid field: %s", name)
-	}
-
-	if !ok {
-		return 0, missingOrInvalid()
-	}
-
-	vi, ok := v.(int)
-	if !ok {
-		vf, ok := v.(float64)
-		if !ok {
-			return 0, missingOrInvalid()
-		}
-
-		vi = int(vf)
-		if float64(vi) != vf {
-			return 0, missingOrInvalid()
-		}
-	}
-
-	return vi, nil
-}
-
-func String(data interface{}, name string) string {
-	s, err := GetString(data, name)
-	if err != nil {
-		panic(err)
-	}
-
-	return s
-}
-
-func GetString(data interface{}, name string) (string, error) {
-	switch dt := data.(type) {
-	case map[string]interface{}:
-		v, ok := dt[name].(string)
-		if !ok {
-			return "", fmt.Errorf("missing or invalid field: %s", name)
-		}
-
-		return v, nil
-	case Struct:
-		v, ok := dt[name].(string)
-		if !ok {
-			return "", fmt.Errorf("missing or invalid field: %s", name)
-		}
-
-		return v, nil
-	default:
-		return "", fmt.Errorf("not a struct")
+		return fmt.Sprint(d.value)
 	}
 }

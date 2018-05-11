@@ -4,6 +4,8 @@ Netreduce endpoints.
 */
 package nred
 
+import "github.com/netreduce/netreduce/data"
+
 // FieldType defines the possible field types in nred definitions.
 type FieldType int
 
@@ -48,9 +50,6 @@ var fieldStrings = []string{
 	"contains",
 }
 
-// OpaqueNumber represents an unparsed numeric value, either int, float or decimal, and of any arbitrary size.
-type OpaqueNumber string
-
 // Field represents a field in a definition.
 type Field struct {
 	typ   FieldType
@@ -73,16 +72,23 @@ type QuerySpec struct {
 // can have a single scalar value or a set of fields. The value or the fields are populated from the responses
 // of the contained queries, typically responses from requests made to backend services. The value or the fields
 // can be altered, or even generated, by the contained rules.
+//
+// The contents of the Definition can be set with the Query, Rule, Field, Value and Extend methods, in a union
+// style.
+//
+// Queries are used to propagate the fields of the definition, or if no fields are set, then the result of the
+// query will be used as is. Fields describe the shape of the data returned by a definition, and they filter the
+// response of the queries. Rules may apply changes to the data and fields returned by the definition. The value
+// defines the result of the definition alone. Currently, it is undefined what a definition will return when
+// both a value and a combination of fields and queries are defined, it may become an invalid definition.
+//
 type Definition struct {
 	name    string
-	value   interface{}
+	value   data.Data
 	queries []QuerySpec
 	fields  []Field
 	rules   []RuleSpec
 }
-
-// NilValue represents the 'null' data. E.g. the JSON null value.
-var NilValue = &struct{}{}
 
 // String returns the string name associated with the FieldTyep. It's also used as the field declaration in the
 // nred DSL.
@@ -161,35 +167,33 @@ func Query(r ...RuleSpec) QuerySpec {
 	}
 }
 
-// Define declares a Netreduce definition. The arguments may be of the type QuerySpec, Field, RuleSpec,
-// Definition, or any arbitrary value. When an argument is a query, it will be used to propagate the fields of
-// the definition, or if no fields were defined, the result of the query will be used as received. Fields
-// describe the shape of the data returned by a definition, and filter the response received from the queries.
-// Rules apply changes to the data and fields returned by the definition. Definition arguments are merged into
-// the new definition forming a union. Values passed in as arguments to a new definition define the response of
-// a definition alone. Only the last value is considered as the value of the definition and the rest is ignored.
-// It is undefined what a definition will return when both a value or a combination of fields and queries are
-// defined. Netreduce will do best effort to serialize those values in the response that are not plain data
-// objects.
-func Define(a ...interface{}) Definition {
-	var d Definition
-	for i := range a {
-		switch at := a[i].(type) {
-		case QuerySpec:
-			d.queries = append(d.queries, at)
-		case Field:
-			d.fields = append(d.fields, at)
-		case RuleSpec:
-			d.rules = append(d.rules, at)
-		case Definition:
-			d.queries = append(d.queries, at.queries...)
-			d.fields = append(d.fields, at.fields...)
-			d.rules = append(d.rules, at.rules...)
-			if at.value != nil {
-				d.value = at.value
-			}
-		default:
-			d.value = a[i]
+func (d Definition) Query(q ...QuerySpec) Definition {
+	d.queries = append(d.queries, q...)
+	return d
+}
+
+func (d Definition) Field(f ...Field) Definition {
+	d.fields = append(d.fields, f...)
+	return d
+}
+
+func (d Definition) Rule(r ...RuleSpec) Definition {
+	d.rules = append(d.rules, r...)
+	return d
+}
+
+func (d Definition) SetValue(v data.Data) Definition {
+	d.value = v
+	return d
+}
+
+func (d Definition) Extend(e ...Definition) Definition {
+	for _, ei := range e {
+		d.queries = append(d.queries, ei.queries...)
+		d.fields = append(d.fields, ei.fields...)
+		d.rules = append(d.rules, ei.rules...)
+		if ei.value != data.Zero() {
+			d.value = ei.value
 		}
 	}
 
@@ -206,4 +210,8 @@ func Export(name string, d Definition) Definition {
 // Name returns the exported name of a definition.
 func (d Definition) Name() string {
 	return d.name
+}
+
+func (d Definition) GetValue() interface{} {
+	return d.value
 }

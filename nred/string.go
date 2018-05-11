@@ -39,17 +39,3 @@ func unescapeString(s string) string {
 
 	return string(us)
 }
-
-func escapeString(s string) string {
-	var b []byte
-	for i := range s {
-		switch s[i] {
-		case '\\', '"':
-			b = append(b, '\\')
-		}
-
-		b = append(b, s[i])
-	}
-
-	return string(b)
-}
