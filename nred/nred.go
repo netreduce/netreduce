@@ -212,6 +212,6 @@ func (d Definition) Name() string {
 	return d.name
 }
 
-func (d Definition) GetValue() interface{} {
+func (d Definition) GetValue() data.Data {
 	return d.value
 }

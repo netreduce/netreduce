@@ -69,8 +69,8 @@ func TestParse(t *testing.T) {
 		doc:    `export "/hello" "Hello, world!"`,
 		expect: Export("/hello", Definition{}.SetValue(data.String("Hello, world!"))),
 	}, {
-		title:  "pass through",
-		doc:    `export "/pass-through" query("https://api.example.org")`,
+		title: "pass through",
+		doc:   `export "/pass-through" query("https://api.example.org")`,
 		expect: Export(
 			"/pass-through",
 			Definition{}.Query(Query(Rule("url", "https://api.example.org"))),
@@ -244,24 +244,24 @@ func TestParseRef(t *testing.T) {
 		doc:    `export "foo" define(const("a", 1))(const("b", 2))`,
 		expect: Export("foo", Definition{}.Field(Const("a", 1), Const("b", 2))),
 	}, {
-		title:  "primitive as initial definition",
-		doc:    `export "one-foo" 1(const("foo", 42))`,
+		title: "primitive as initial definition",
+		doc:   `export "one-foo" 1(const("foo", 42))`,
 		expect: Export("one-foo", Definition{}.SetValue(
 			data.Int(1),
 		).Field(
 			Const("foo", 42),
 		)),
 	}, {
-		title:  "primitive as initial definition, explained",
-		doc:    `export "one-foo" define(1)(define(const("foo", 42)))`,
+		title: "primitive as initial definition, explained",
+		doc:   `export "one-foo" define(1)(define(const("foo", 42)))`,
 		expect: Export("one-foo", Definition{}.SetValue(
 			data.Int(1),
 		).Field(
 			Const("foo", 42)),
 		),
 	}, {
-		title:  "primitive as initial definition, simplified",
-		doc:    `export "one-foo" define(1, const("foo", 42))`,
+		title: "primitive as initial definition, simplified",
+		doc:   `export "one-foo" define(1, const("foo", 42))`,
 		expect: Export("one-foo", Definition{}.SetValue(
 			data.Int(1),
 		).Field(

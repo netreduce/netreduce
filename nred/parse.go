@@ -45,9 +45,11 @@ func composite(children []expression) expression {
 }
 
 func parsePrimitive(n *parser.Node) (exp expression, err error) {
+	println("a primitive", n.Name)
 	typ := n.Name
 	switch typ {
 	case "int":
+		println("parsed an int")
 		exp.typ = intExp
 		var v int
 		v, err = strconv.Atoi(n.Text())
@@ -66,6 +68,7 @@ func parsePrimitive(n *parser.Node) (exp expression, err error) {
 
 		exp.primitive = v
 	case "string":
+		println("parsed a string")
 		exp.typ = stringExp
 		t := n.Text()
 		exp.primitive = unescapeString(t[1 : len(t)-1])
@@ -174,7 +177,7 @@ func Parse(r io.Reader) ([]Definition, error) {
 	}
 
 	if len(n.Nodes) == 1 && n.Nodes[0].Name == "single-expression" {
-		e, err := parseExpression(n.Nodes[0])
+		e, err := parseExpression(n.Nodes[0].Nodes[0])
 		if err != nil {
 			return nil, err
 		}

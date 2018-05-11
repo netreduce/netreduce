@@ -15,20 +15,20 @@ const (
 )
 
 type Data struct {
-	typ DataType
+	typ   DataType
 	value interface{}
 }
 
 var zero Data
 
-func Zero() Data { return zero }
+func Zero() Data           { return zero }
 func Number(n string) Data { return Data{typ: NumberData, value: n} }
-func Int(n int) Data { return Data{typ: IntData, value: n} }
+func Int(n int) Data       { return Data{typ: IntData, value: n} }
 func Float(f float64) Data { return Data{typ: FloatData, value: f} }
 func String(s string) Data { return Data{typ: StringData, value: s} }
-func True() Data { return Data{typ: BoolData, value: true} }
-func False() Data { return Data{typ: BoolData, value: false} }
-func Nil() Data { return Data{typ: NilData} }
+func True() Data           { return Data{typ: BoolData, value: true} }
+func False() Data          { return Data{typ: BoolData, value: false} }
+func Nil() Data            { return Data{typ: NilData} }
 
 func escapeString(s string) string {
 	var b []byte
