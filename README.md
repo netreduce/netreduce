@@ -79,10 +79,9 @@ export "/authenticated-user" define(
 
 	string("name")
 	int("level")
-	float("iris-radius-when-seen-this")
 
 	contains("roles", define(
-		query("https://auth.example.org/roles", path(link("id")))
+		query("https://auth.example.org/roles", appendPath(link("id")))
 		string("name")
 		selectField("name")
 	))

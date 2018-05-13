@@ -1,16 +1,17 @@
 package engine
 
 import (
-	"github.com/netreduce/netreduce/data"
 	"github.com/netreduce/netreduce/nred"
+	"github.com/netreduce/netreduce/registry"
 )
 
 type proto struct {
-	data data.Data
+	definition nred.Definition
+	registry *registry.Registry
 }
 
-func createProto(d nred.Definition) *proto {
-	return &proto{data: d.GetValue()}
+func newProto(r *registry.Registry, d nred.Definition) *proto {
+	return &proto{definition: d, registry: r}
 }
 
-func (p *proto) instance() *plan { return &plan{data: p.data} }
+func (p *proto) instance() *plan { return &plan{definition: p.definition, registry: p.registry} }

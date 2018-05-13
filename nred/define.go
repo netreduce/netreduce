@@ -25,7 +25,7 @@ const (
 	nilSymbol      = "nil"
 )
 
-const urlConnectorName = "url"
+const urlConnectorName = "setURL"
 
 var (
 	errFieldArgsCount = errors.New("invalid number of field arguments")
@@ -76,6 +76,29 @@ func getFieldNameOnly(args []expression) (name string, err error) {
 	return
 }
 
+func defineData(e expression) (d data.Data, err error) {
+	switch e.typ {
+	case intExp:
+		d = data.Int(e.primitive.(int64))
+	case floatExp:
+		d = data.Float(e.primitive.(float64))
+	case opaqueNumberExp:
+		d = data.Number(e.primitive.(string))
+	case stringExp:
+		d = data.String(e.primitive.(string))
+	case trueExp:
+		d = data.True()
+	case falseExp:
+		d = data.False()
+	case nilExp:
+		d = data.Nil()
+	default:
+		err = fmt.Errorf("invalid data type: %v", e.typ)
+	}
+
+	return
+}
+
 func defineConst(args []expression) (d Definition, err error) {
 	if len(args) != 2 {
 		err = errFieldArgsCount
@@ -87,13 +110,12 @@ func defineConst(args []expression) (d Definition, err error) {
 		return
 	}
 
-	switch args[1].typ {
-	case intExp, floatExp, opaqueNumberExp, stringExp, trueExp, falseExp, nilExp:
-		d = Definition{}.Field(Const(name, args[1].primitive))
-	default:
-		err = errors.New("invalid const field value")
+	var dt data.Data
+	if dt, err = defineData(args[1]); err != nil {
+		return
 	}
 
+	d = Definition{}.Field(Const(name, dt))
 	return
 }
 
@@ -165,7 +187,7 @@ func defineRuleArgs(args []expression) ([]interface{}, error) {
 	return argValues, nil
 }
 
-func defineCompositeRule(exp expression) (r RuleSpec, err error) {
+func defineCompositeRule(exp expression) (r Rule, err error) {
 	switch exp.children[0].typ {
 	case symbolExp:
 		name := exp.children[0].primitive.(string)
@@ -175,7 +197,7 @@ func defineCompositeRule(exp expression) (r RuleSpec, err error) {
 			return
 		}
 
-		r = Rule(name, args...)
+		r = NewRule(name, args...)
 	case compositeExp:
 		err = errors.New("currying of rules not allowed")
 	default:
@@ -185,7 +207,7 @@ func defineCompositeRule(exp expression) (r RuleSpec, err error) {
 	return
 }
 
-func defineRule(exp expression) (r RuleSpec, err error) {
+func defineRule(exp expression) (r Rule, err error) {
 	switch exp.typ {
 	case compositeExp:
 		return defineCompositeRule(exp)
@@ -198,25 +220,25 @@ func defineRule(exp expression) (r RuleSpec, err error) {
 			return
 		}
 
-		r = Rule(name)
+		r = NewRule(name)
 	}
 
 	return
 }
 
-func defineQueryRule(exp expression) (RuleSpec, error) {
+func defineQueryRule(exp expression) (Rule, error) {
 	switch exp.typ {
 	case symbolExp, compositeExp:
 		return defineRule(exp)
 	default:
-		return Rule(urlConnectorName, exp.primitive), nil
+		return NewRule(urlConnectorName, exp.primitive), nil
 	}
 }
 
 func defineQuery(args []expression) (d Definition, err error) {
-	var r []RuleSpec
+	var r []Rule
 	for _, arg := range args {
-		var rule RuleSpec
+		var rule Rule
 		rule, err = defineQueryRule(arg)
 		if err != nil {
 			return
@@ -225,7 +247,7 @@ func defineQuery(args []expression) (d Definition, err error) {
 		r = append(r, rule)
 	}
 
-	d = Definition{}.Query(Query(r...))
+	d = Definition{}.Query(NewQuery(r...))
 	return
 }
 
@@ -249,7 +271,7 @@ func defineBySymbol(name string, args []expression) (d Definition, err error) {
 			return
 		}
 
-		d = Definition{}.Rule(Rule(name, a...))
+		d = Definition{}.Rule(NewRule(name, a...))
 	}
 
 	return
@@ -292,7 +314,7 @@ func define(exp expression) (d Definition, err error) {
 	case compositeExp:
 		d, err = defineComposite(exp)
 	case intExp:
-		d = Definition{}.SetValue(data.Int(exp.primitive.(int)))
+		d = Definition{}.SetValue(data.Int(exp.primitive.(int64)))
 	case floatExp:
 		d = Definition{}.SetValue(data.Float(exp.primitive.(float64)))
 	case stringExp:

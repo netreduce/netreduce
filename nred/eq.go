@@ -1,6 +1,8 @@
 package nred
 
-func rulesEq(r ...RuleSpec) bool {
+import "github.com/netreduce/netreduce/data"
+
+func rulesEq(r ...Rule) bool {
 	if len(r) < 2 {
 		return true
 	}
@@ -14,8 +16,8 @@ func rulesEq(r ...RuleSpec) bool {
 	}
 
 	for i := range r[0].args {
-		if r0, ok := r[0].args[i].(RuleSpec); ok {
-			if r1, ok := r[1].args[i].(RuleSpec); !ok || !rulesEq(r0, r1) {
+		if r0, ok := r[0].args[i].(Rule); ok {
+			if r1, ok := r[1].args[i].(Rule); !ok || !rulesEq(r0, r1) {
 				return false
 			}
 		} else if r[0].args[i] != r[1].args[i] {
@@ -26,12 +28,12 @@ func rulesEq(r ...RuleSpec) bool {
 	return rulesEq(r[1:]...)
 }
 
-func ruleSetsEq(left, right []RuleSpec) bool {
+func ruleSetsEq(left, right []Rule) bool {
 	if len(left) != len(right) {
 		return false
 	}
 
-	rr := make([]RuleSpec, len(right))
+	rr := make([]Rule, len(right))
 	copy(rr, right)
 
 	for len(left) > 0 {
@@ -56,12 +58,12 @@ func ruleSetsEq(left, right []RuleSpec) bool {
 	return true
 }
 
-func queriesEq(left, right []QuerySpec) bool {
+func queriesEq(left, right []Query) bool {
 	if len(left) != len(right) {
 		return false
 	}
 
-	rq := make([]QuerySpec, len(right))
+	rq := make([]Query, len(right))
 	copy(rq, right)
 
 	for len(left) > 0 {
@@ -99,11 +101,11 @@ func fieldsEq(f ...Field) bool {
 		return false
 	}
 
-	if d0, ok := f[0].value.(Definition); ok {
-		if d1, ok := f[1].value.(Definition); !ok || !Eq(d0, d1) {
-			return false
-		}
-	} else if f[0].value != f[1].value {
+	if !data.Eq(f[0].value, f[1].value) {
+		return false
+	}
+
+	if !Eq(f[0].contains, f[1].contains) {
 		return false
 	}
 
@@ -149,9 +151,10 @@ func Eq(d ...Definition) bool {
 		return false
 	}
 
-	if d[0].value != d[1].value {
+	if !data.Eq(d[0].value, d[1].value) {
 		return false
 	}
+
 
 	if !queriesEq(d[0].queries, d[1].queries) {
 		return false

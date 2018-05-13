@@ -66,7 +66,7 @@ func (f Field) writeTo(w io.Writer) (err error) {
 	return
 }
 
-func (r RuleSpec) writeTo(w io.Writer) error {
+func (r Rule) writeTo(w io.Writer) error {
 	if r.name == urlConnectorName {
 		return fprint(w, r.args[0])
 	}
@@ -95,7 +95,7 @@ func (r RuleSpec) writeTo(w io.Writer) error {
 	return nil
 }
 
-func (q QuerySpec) writeTo(w io.Writer) error {
+func (q Query) writeTo(w io.Writer) error {
 	if _, err := fmt.Fprint(w, "query("); err != nil {
 		return err
 	}
@@ -132,7 +132,7 @@ func (d Definition) writeTo(w io.Writer) error {
 	}
 
 	var args []interface{}
-	if d.value != data.Zero() {
+	if !data.IsZero(d.value) {
 		args = append(args, d.value)
 	}
 
@@ -169,8 +169,8 @@ func (d Definition) writeTo(w io.Writer) error {
 }
 
 func (f Field) String() string      { return toString(f) }
-func (r RuleSpec) String() string   { return toString(r) }
-func (q QuerySpec) String() string  { return toString(q) }
+func (r Rule) String() string   { return toString(r) }
+func (q Query) String() string  { return toString(q) }
 func (d Definition) String() string { return toString(d) }
 
 func Fprint(w io.Writer, d ...Definition) error {

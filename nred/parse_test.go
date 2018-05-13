@@ -73,7 +73,7 @@ func TestParse(t *testing.T) {
 		doc:   `export "/pass-through" query("https://api.example.org")`,
 		expect: Export(
 			"/pass-through",
-			Definition{}.Query(Query(Rule("url", "https://api.example.org"))),
+			Definition{}.Query(NewQuery(NewRule("url", "https://api.example.org"))),
 		),
 	}, {
 		title:  "empty",
@@ -101,9 +101,9 @@ func TestParse(t *testing.T) {
 			export "/constants" constants
 		`,
 		expect: Export("/constants", Definition{}.Field(
-			Const("a", "foo"),
-			Const("b", 42),
-			Const("c", 3.14),
+			Const("a", data.String("foo")),
+			Const("b", data.Int(42)),
+			Const("c", data.Float(3.14)),
 		)),
 	}, {
 		title: "extend",
@@ -121,11 +121,11 @@ func TestParse(t *testing.T) {
 			)
 		`,
 		expect: Export("enriched-constants", Definition{}.Field(
-			Const("a", "foo"),
-			Const("b", 42),
-			Const("c", 3.14),
+			Const("a", data.String("foo")),
+			Const("b", data.Int(42)),
+			Const("c", data.Float(3.14)),
 		).Query(
-			Query(Rule("url", "https://api.example.org")),
+			NewQuery(NewRule("url", "https://api.example.org")),
 		).Field(
 			String("foo"),
 		)),
@@ -143,12 +143,12 @@ func TestParse(t *testing.T) {
 			)
 		`,
 		expect: Export("/foo-bar-baz", Definition{}.Query(
-			Query(Rule("url", "https://api.example.org")),
+			NewQuery(NewRule("url", "https://api.example.org")),
 		).Field(
 			String("foo"),
 		).Rule(
-			Rule("renameField", "foo", "bar"),
-			Rule("renameField", "bar", "baz"),
+			NewRule("renameField", "foo", "bar"),
+			NewRule("renameField", "bar", "baz"),
 		)),
 	}, {
 		title: "comments",
@@ -171,12 +171,12 @@ func TestParse(t *testing.T) {
 			)
 		`,
 		expect: Export("/foo-bar-baz", Definition{}.Query(
-			Query(Rule("url", "https://api.example.org")),
+			NewQuery(NewRule("url", "https://api.example.org")),
 		).Field(
 			String("foo"),
 		).Rule(
-			Rule("renameField", "foo", "bar"),
-			Rule("renameField", "bar", "baz"),
+			NewRule("renameField", "foo", "bar"),
+			NewRule("renameField", "bar", "baz"),
 		)),
 	}, {
 		title: "contains",
@@ -197,21 +197,21 @@ func TestParse(t *testing.T) {
 			)
 		`,
 		expect: Export("/authenticated-user", Definition{}.Query(
-			Query(Rule("url", "https://auth.example.org/info")),
-			Query(Rule("authConnector.extended")),
+			NewQuery(NewRule("url", "https://auth.example.org/info")),
+			NewQuery(NewRule("authConnector.extended")),
 		).Field(
 			String("name"),
 			Int("level"),
 			Float("iris-radius-when-seen-this"),
 			Contains("roles", Definition{}.Query(
-				Query(
-					Rule("url", "https://auth.example.org/roles"),
-					Rule("path", Rule("link", "id")),
+				NewQuery(
+					NewRule("url", "https://auth.example.org/roles"),
+					NewRule("path", NewRule("link", "id")),
 				),
 			).Field(
 				String("name"),
 			).Rule(
-				Rule("selectField", "name"),
+				NewRule("selectField", "name"),
 			)),
 		)),
 	}} {
@@ -230,7 +230,7 @@ func TestParseRef(t *testing.T) {
 			let foo = const("foo", 42)
 			export "/foo" foo
 		`,
-		expect: Export("/foo", Definition{}.Field(Const("foo", 42))),
+		expect: Export("/foo", Definition{}.Field(Const("foo", data.Int(42)))),
 	}, {
 		title:  "empty define",
 		doc:    `export "empty" define`,
@@ -238,18 +238,18 @@ func TestParseRef(t *testing.T) {
 	}, {
 		title:  "rule without args",
 		doc:    `export "foo" bar`,
-		expect: Export("foo", Definition{}.Rule(Rule("bar"))),
+		expect: Export("foo", Definition{}.Rule(NewRule("bar"))),
 	}, {
 		title:  "curry define",
 		doc:    `export "foo" define(const("a", 1))(const("b", 2))`,
-		expect: Export("foo", Definition{}.Field(Const("a", 1), Const("b", 2))),
+		expect: Export("foo", Definition{}.Field(Const("a", data.Int(1)), Const("b", data.Int(2)))),
 	}, {
 		title: "primitive as initial definition",
 		doc:   `export "one-foo" 1(const("foo", 42))`,
 		expect: Export("one-foo", Definition{}.SetValue(
 			data.Int(1),
 		).Field(
-			Const("foo", 42),
+			Const("foo", data.Int(42)),
 		)),
 	}, {
 		title: "primitive as initial definition, explained",
@@ -257,7 +257,7 @@ func TestParseRef(t *testing.T) {
 		expect: Export("one-foo", Definition{}.SetValue(
 			data.Int(1),
 		).Field(
-			Const("foo", 42)),
+			Const("foo", data.Int(42))),
 		),
 	}, {
 		title: "primitive as initial definition, simplified",
@@ -265,7 +265,7 @@ func TestParseRef(t *testing.T) {
 		expect: Export("one-foo", Definition{}.SetValue(
 			data.Int(1),
 		).Field(
-			Const("foo", 42),
+			Const("foo", data.Int(42)),
 		)),
 	}} {
 		test.run(t)

@@ -54,18 +54,19 @@ var fieldStrings = []string{
 type Field struct {
 	typ   FieldType
 	name  string
-	value interface{}
+	value data.Data
+	contains Definition
 }
 
-// RuleSpec represents a rule in a definition or a query. E.g. the URL of a simple http GET query.
-type RuleSpec struct {
+// Rule represents a rule in a definition or a query. E.g. the URL of a simple http GET query.
+type Rule struct {
 	name string
 	args []interface{}
 }
 
-// QuerySpec represents a query for backend data. Its actual behavior depends on the contained rules.
-type QuerySpec struct {
-	rules []RuleSpec
+// Query represents a query for backend data. Its actual behavior depends on the contained rules.
+type Query struct {
+	rules []Rule
 }
 
 // Definition describes a Netreduce request handler. Definitions may contain further Definitions. A definition
@@ -85,9 +86,9 @@ type QuerySpec struct {
 type Definition struct {
 	name    string
 	value   data.Data
-	queries []QuerySpec
+	queries []Query
 	fields  []Field
-	rules   []RuleSpec
+	rules   []Rule
 }
 
 // String returns the string name associated with the FieldTyep. It's also used as the field declaration in the
@@ -95,7 +96,7 @@ type Definition struct {
 func (l FieldType) String() string { return enumString(int(l), fieldStrings) }
 
 // Const declares a const field.
-func Const(name string, value interface{}) Field {
+func Const(name string, value data.Data) Field {
 	return Field{
 		typ:   ConstField,
 		name:  name,
@@ -148,26 +149,26 @@ func Contains(name string, d Definition) Field {
 	return Field{
 		typ:   ContainsField,
 		name:  name,
-		value: d,
+		contains: d,
 	}
 }
 
-// Rule declares a rule either for a query or a definition.
-func Rule(name string, args ...interface{}) RuleSpec {
-	return RuleSpec{
+// NewRule declares a rule either for a query or a definition.
+func NewRule(name string, args ...interface{}) Rule {
+	return Rule{
 		name: name,
 		args: args,
 	}
 }
 
-// Query declares a query for a definition.
-func Query(r ...RuleSpec) QuerySpec {
-	return QuerySpec{
+// NewQuery declares a query for a definition.
+func NewQuery(r ...Rule) Query {
+	return Query{
 		rules: r,
 	}
 }
 
-func (d Definition) Query(q ...QuerySpec) Definition {
+func (d Definition) Query(q ...Query) Definition {
 	d.queries = append(d.queries, q...)
 	return d
 }
@@ -177,7 +178,7 @@ func (d Definition) Field(f ...Field) Definition {
 	return d
 }
 
-func (d Definition) Rule(r ...RuleSpec) Definition {
+func (d Definition) Rule(r ...Rule) Definition {
 	d.rules = append(d.rules, r...)
 	return d
 }
@@ -192,7 +193,7 @@ func (d Definition) Extend(e ...Definition) Definition {
 		d.queries = append(d.queries, ei.queries...)
 		d.fields = append(d.fields, ei.fields...)
 		d.rules = append(d.rules, ei.rules...)
-		if ei.value != data.Zero() {
+		if !data.IsZero(ei.value) {
 			d.value = ei.value
 		}
 	}
@@ -215,3 +216,22 @@ func (d Definition) Name() string {
 func (d Definition) GetValue() data.Data {
 	return d.value
 }
+
+func (d Definition) Fields() []Field {
+	return d.fields
+}
+
+func (d Definition) Queries() []Query {
+	return d.queries
+}
+
+func (q Query) Rules() []Rule {
+	return q.rules
+}
+
+func (r Rule) Name() string { return r.name }
+func (r Rule) Args() []interface{} { return r.args }
+
+func (f Field) Type() FieldType { return f.typ }
+func (f Field) Name() string { return f.name }
+func (f Field) Value() data.Data { return f.value }

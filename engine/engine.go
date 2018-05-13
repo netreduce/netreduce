@@ -4,11 +4,14 @@ import (
 	"errors"
 	"sync"
 
+	"github.com/netreduce/netreduce/nred"
 	"github.com/netreduce/netreduce/data"
 	"github.com/netreduce/netreduce/registry"
 )
 
-type Options struct{}
+type Options struct{
+	registry *registry.Registry
+}
 
 type Engine struct {
 	mx       sync.Mutex
@@ -19,15 +22,16 @@ type Engine struct {
 
 var ErrNotFound = errors.New("not found")
 
-func New(Options) *Engine {
+func New(o Options) *Engine {
 	return &Engine{
+		registry: o.registry,
 		protos: make(map[string]*proto),
 	}
 }
 
 func (e *Engine) checkEvict() {}
 
-func (e *Engine) getExistingPlan(key string) (*plan, bool) {
+func (e *Engine) getProto(key string) (*proto, bool) {
 	e.mx.Lock()
 	defer e.mx.Unlock()
 
@@ -37,8 +41,7 @@ func (e *Engine) getExistingPlan(key string) (*plan, bool) {
 	}
 
 	e.lru.update(key)
-	println("creating the existing plan")
-	return proto.instance(), true
+	return proto, true
 }
 
 func (e *Engine) storeProto(key string, p *proto) {
@@ -50,33 +53,35 @@ func (e *Engine) storeProto(key string, p *proto) {
 	e.lru.update(key)
 }
 
-func (e *Engine) getPlan(c *Context) (*plan, bool) {
-	key := c.definitionKey()
-	p, ok := e.getExistingPlan(key)
+func (e *Engine) Exec(key string, req Incoming) (data.Data, error) {
+	c := newContext(req.request, req.params)
+	p, ok := e.getProto(key)
 	if ok {
-		return p, true
+		return p.instance().exec(c)
 	}
 
-	println("no existing plan")
 	d, ok := e.registry.Definition(key)
 	if !ok {
-		d, ok = c.definition()
-		if !ok {
-			return nil, false
-		}
+		return data.Zero(), ErrNotFound
 	}
 
-	pp := createProto(d)
-	e.storeProto(key, pp)
-	println("creating new instance")
-	return pp.instance(), true
+	p = newProto(e.registry, d)
+	e.storeProto(key, p)
+	return p.instance().exec(c)
 }
 
-func (e *Engine) Exec(c *Context) (data.Data, error) {
-	p, ok := e.getPlan(c)
-	if !ok {
-		return data.Data{}, ErrNotFound
+// TODO:
+// - validation
+// - IncomingRequest
+func (e *Engine) ExecDefinition(d nred.Definition, req Incoming) (data.Data, error) {
+	c := newContext(req.request, req.params)
+	key := d.String()
+	p, ok := e.getProto(key)
+	if ok {
+		return p.instance().exec(c)
 	}
 
-	return p.exec(c)
+	p = newProto(e.registry, d)
+	e.storeProto(key, p)
+	return p.instance().exec(c)
 }
